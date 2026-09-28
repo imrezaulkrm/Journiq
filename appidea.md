@@ -1,22 +1,25 @@
-# Journiq — Complete V1 Mobile App Development Prompt
+# Journiq
 
-## 1. Project Overview
+## Track Every Journey.
 
-Build a production-quality Flutter Android mobile application named **Journiq**.
+**Product Type:** Personal GPS Journey Tracking & Journey Mapping App
+**Platform:** Android
+**Framework:** Flutter / Dart
+**Design Language:** Modern Material 3 + Futuristic Mobility UI
+**Architecture:** Clean Architecture + Local First
+**Primary Storage:** Local SQLite/Drift
+**Backend:** None in V1
+**Authentication:** None in V1
 
-### App Name
+---
 
-**Journiq**
+# 1. Product Vision
 
-### Tagline
+Journiq is a modern personal journey-tracking application designed to record, visualize, analyze, and preserve every journey a user makes.
 
-**Track Every Journey.**
+The application is NOT limited to cycling.
 
-### Core Concept
-
-Journiq is a modern journey-tracking application that allows users to record and review their journeys using GPS.
-
-The app should not be limited to cycling. Users should be able to track different types of journeys such as:
+A journey can be:
 
 * Walking
 * Bicycle
@@ -26,656 +29,668 @@ The app should not be limited to cycling. Users should be able to track differen
 * Train
 * Other
 
-A user should be able to:
+The core idea is:
 
-1. Select a journey mode.
-2. Start a journey.
-3. Track their GPS location.
-4. See their live position on a map.
-5. Draw the traveled route on the map.
-6. Calculate distance, duration, and speed.
-7. Pause and resume the journey.
-8. Stop and save the journey.
-9. View weather information.
-10. See areas/locations covered during the journey.
-11. Review previous journeys.
-12. View statistics.
-13. View all completed routes on a cumulative map.
+> **Start a journey → Journiq continuously understands the user's movement → visually tracks the route → records statistics → captures environmental information → saves the journey locally → builds a permanent personal journey history and cumulative map.**
 
-The application should feel like a real-world polished product, not a demo application.
+Journiq should feel like a modern navigation/mobility application rather than a traditional CRUD application.
+
+The application must have a polished, futuristic, responsive interface with smooth animations, modern cards, map-centric screens, floating controls, clear typography, and strong visual hierarchy.
 
 ---
 
-# 2. V1 Scope
+# 2. Core Product Principles
 
-Journiq V1 must be **local-first**.
+## 2.1 Local First
 
-There should be **NO backend/server dependency** in V1.
+Journiq V1 must work without a backend.
 
-Do NOT implement:
+All important journey information must be stored locally.
 
-* Spring Boot
-* PostgreSQL server
-* Firebase backend
-* User authentication
-* WebSocket
-* Cloud synchronization
-* Live location sharing
-* Group journeys
-* Friends
-* Social features
-* Kubernetes
-* CI/CD
-* Admin panel
+The user must be able to:
 
-Journey data should be stored locally on the Android device.
+* Start journeys
+* Track journeys
+* Pause/resume
+* Stop/save journeys
+* View history
+* View journey details
+* View statistics
+* View cumulative map
+* Delete journeys
 
-The architecture should nevertheless make it possible to introduce a backend in V2 without rewriting the entire application.
+without requiring an account or server.
+
+Future backend synchronization may be introduced in V2, but V1 must not depend on it.
 
 ---
 
-# 3. Recommended Technology Stack
+# 3. Important UX Requirement
 
-Use:
+Journiq must NOT behave like a basic map with a GPS dot.
 
-* Flutter
-* Dart
-* Android
-* Material 3
-* Riverpod for state management
-* Drift for SQLite database
-* `drift_flutter`
-* `flutter_map`
-* `latlong2`
-* `geolocator`
-* `permission_handler`
-* `http`
-* `intl`
-* `shared_preferences`
+The live tracking experience should feel similar to modern navigation applications.
 
-### Map
+The user's current position must be continuously represented on the map.
 
-Use an OpenStreetMap-based map through `flutter_map`.
+When tracking:
 
-The implementation must respect the selected tile provider's:
+* Current location marker is visible
+* Map camera follows the user
+* Marker movement is smooth
+* Route polyline grows continuously
+* Camera automatically recenters
+* User can manually pan the map
+* After manual interaction, automatic following temporarily pauses
+* A "recenter/follow me" button appears
+* Pressing it returns the camera to the current position
+* User can zoom in/out
+* User can rotate the map if supported
+* Heading/orientation may be represented when reliable
+* GPS accuracy should be visually represented when appropriate
 
-* Attribution requirements
-* Rate limits
-* Usage policies
-* Terms of service
+The experience should feel like:
 
-Do not hardcode an inappropriate production tile endpoint without considering its usage policy.
+> "Journiq is following me."
 
-### Weather
+rather than:
 
-Use a free or free-tier weather API.
-
-Weather failure must never prevent the user from recording or saving a journey.
+> "There is a static marker somewhere on the map."
 
 ---
 
-# 4. Application Architecture
+# 4. Application Navigation
 
-Use a clean, maintainable architecture.
+The application should have a modern bottom navigation structure.
 
-Recommended structure:
+Recommended primary navigation:
 
-```text
-lib/
-├── core/
-│   ├── constants/
-│   ├── theme/
-│   ├── errors/
-│   ├── utils/
-│   └── services/
-│
-├── features/
-│   ├── home/
-│   ├── journey/
-│   ├── journeys/
-│   ├── statistics/
-│   ├── weather/
-│   └── settings/
-│
-├── database/
-│   ├── app_database.dart
-│   ├── tables/
-│   └── daos/
-│
-└── main.dart
-```
+1. Home
+2. Journey
+3. Map
+4. Statistics
+5. History
 
-Follow:
+The exact navigation implementation may be adjusted if a better UX is found.
 
-```text
-Presentation
-      ↓
-Domain
-      ↓
-Data
-```
+However, the application must always provide easy access to:
 
-Business logic should not be placed directly inside UI widgets.
+* Start Journey
+* Current Journey
+* Journey History
+* Personal Map
+* Statistics
+* Settings
 
 ---
 
-# 5. State Management
+# 5. Home Screen
 
-Use Riverpod or an equivalent lightweight state-management architecture.
+The Home screen should immediately communicate the user's journey activity.
 
-Separate:
-
-* UI state
-* GPS state
-* Journey state
-* Database state
-* Weather state
-* Statistics state
-
-Avoid creating one giant provider/controller containing the entire application.
-
----
-
-# 6. Service Abstractions
-
-Create clear service/repository abstractions.
-
-At minimum:
-
-```text
-LocationService
-WeatherService
-GeocodingService
-JourneyRepository
-```
-
-Optionally:
-
-```text
-MapService
-```
-
-The V1 repository will use SQLite locally.
-
-Future V2 could implement:
-
-```text
-LocalJourneyRepository
-RemoteJourneyRepository
-```
-
-without changing the presentation layer significantly.
-
----
-
-# 7. Main Navigation
-
-The application should have four main sections:
-
-```text
-Home
-Journeys
-Statistics
-Settings
-```
-
-Use a polished Material 3 navigation experience.
-
----
-
-# 8. Home Screen
-
-The Home screen should feel like the main dashboard.
-
-Show:
-
-### Header
-
-```text
-Journiq
-Track Every Journey.
-```
-
-### Current Weather
+## Header
 
 Display:
 
-* Temperature
-* Weather condition
-* Weather icon
-* Feels-like temperature
-* Humidity
-* Wind speed
-* Rain probability when available
+* Journiq logo/name
+* Short greeting or contextual text
+* Current date
+* Optional weather summary
 
-Weather should use the user's current location when appropriate.
-
-If weather cannot be retrieved:
-
-* Do not crash.
-* Show a graceful fallback.
-* Journey tracking must continue normally.
-
-### Monthly Statistics
-
-Show locally calculated statistics such as:
-
-```text
-Total Distance
-Total Journeys
-Active Time
-Average Speed
-```
-
-### Primary CTA
-
-A prominent:
-
-```text
-Start Journey
-```
-
-button.
-
-The CTA should take the user to journey-mode selection.
+Avoid excessive decorative elements.
 
 ---
 
-# 9. Journey Mode Selection
+## Primary Start Journey Card
 
-Before starting a journey, allow the user to select:
+A large visually prominent card:
 
-```text
+**Start a Journey**
+
+The card should communicate that tracking can begin immediately.
+
+Example:
+
+```
+START JOURNEY
+
+Choose your mode
+and begin tracking your route.
+
+[ Start Journey ]
+```
+
+The Start button should be highly visible.
+
+---
+
+# 6. Journey Mode Selection
+
+Before starting a journey, user selects:
+
+* Walking
+* Bicycle
+* Motorcycle
+* Car
+* Bus
+* Train
+* Other
+
+Each mode should have:
+
+* Appropriate icon
+* Label
+* Subtle animation/visual feedback
+* Selected state
+
+Example:
+
+```
 🚶 Walking
 🚲 Bicycle
-🏍️ Motorcycle
+🏍 Motorcycle
 🚗 Car
 🚌 Bus
 🚆 Train
-🧭 Other
+••• Other
 ```
 
-Use attractive cards/icons.
+Use a polished grid/card layout.
 
-The selected mode should be stored with the journey.
+Do NOT use old-fashioned plain dropdown UI.
 
 ---
 
-# 10. Start Journey Flow
+# 7. Live Journey Screen
 
-When the user presses Start Journey:
-
-### Step 1
-
-Check whether location services are enabled.
-
-### Step 2
-
-Check location permissions.
-
-Handle:
-
-* Permission granted
-* Permission denied
-* Permission denied permanently
-* GPS disabled
-
-Provide clear user-friendly instructions.
-
-### Step 3
-
-Obtain the initial GPS position.
-
-### Step 4
-
-Create a new journey session.
-
-### Step 5
-
-Start GPS tracking.
-
-### Step 6
-
-Navigate to:
-
-```text
-Live Journey
-```
-
----
-
-# 11. Live Journey Screen
-
-This is one of the most important screens.
+This is the most important screen in the application.
 
 The map should occupy most of the screen.
 
-Display:
+The UI must be map-first.
 
-* Current position
-* Start marker
-* Current location marker
-* Route polyline
-* Map controls
-* Current GPS information where useful
+Recommended structure:
 
-The route should visually show exactly where the user has traveled.
-
-### Statistics Overlay
-
-Display:
-
-```text
-Distance
-00.00 km
-
-Duration
-00:00:00
-
-Average Speed
-00.0 km/h
-
-Current Speed
-00.0 km/h
-
-Max Speed
-00.0 km/h
 ```
-
-The UI should update during tracking.
-
-### Controls
-
-Provide:
-
-```text
-Pause
-Resume
-Stop
+┌───────────────────────────────┐
+│  ← Walking       ● Tracking   │
+│                               │
+│                               │
+│             MAP               │
+│                               │
+│        ● current location     │
+│       ╱                        │
+│      ╱ route                  │
+│     ╱                         │
+│                               │
+│                        ◎      │
+│                     Recenter  │
+│                               │
+├───────────────────────────────┤
+│  2.84 km     18:42            │
+│  9.1 km/h     Avg 8.7 km/h    │
+├───────────────────────────────┤
+│   Pause              Stop     │
+└───────────────────────────────┘
 ```
-
-Use large, accessible controls.
-
-The user should not accidentally stop a journey.
-
-Stopping should require confirmation.
 
 ---
 
-# 12. GPS Tracking
+# 8. Live Map Requirements
 
-Use `geolocator`.
+The map must:
 
-Store GPS points containing:
+* Show current user location
+* Show route polyline
+* Automatically follow user
+* Update camera smoothly
+* Support zoom
+* Support pan
+* Support recenter
+* Show route progress
+* Avoid unnecessary map redraws
+* Handle GPS updates efficiently
 
-```text
-latitude
-longitude
-timestamp
-speed
-accuracy
+The current position marker should be modern.
+
+Prefer:
+
+* Circular location indicator
+* Accuracy ring
+* Direction/heading indicator when available
+* Smooth interpolation between GPS samples
+
+Do not use a generic static pin unless necessary.
+
+---
+
+# 9. Google-Maps-Like Camera Following
+
+Implement a dedicated map-following controller.
+
+When tracking begins:
+
+1. Obtain valid GPS position.
+2. Move camera to current position.
+3. Set an appropriate zoom level.
+4. Start following the user.
+5. Each valid GPS update moves the camera toward the new location.
+6. Camera movement should be animated rather than abruptly jumping.
+
+Example behavior:
+
+```
+GPS Update
+     ↓
+Validate location
+     ↓
+Calculate movement
+     ↓
+Update marker
+     ↓
+Update route
+     ↓
+Animate camera
+     ↓
+Maintain user visibility
 ```
 
-GPS tracking must be battery-conscious.
+The user's location should generally remain around the center/lower-center portion of the visible map while navigation is active.
 
-Do not blindly save every GPS update.
+---
 
-Use sensible:
+# 10. Manual Map Interaction
 
-* Accuracy filtering
-* Distance filtering
-* Time filtering
+The user must be able to interact with the map while a journey is running.
 
-Reject invalid GPS data such as:
+If the user:
 
-* Extremely poor accuracy
+* pans
+* zooms
+* rotates
+
+then automatic camera following should temporarily stop.
+
+A floating button should appear:
+
+**◎ Follow Me**
+
+When pressed:
+
+* camera returns to current location
+* appropriate zoom is restored
+* follow mode becomes active again
+
+This behavior is critical.
+
+Do not constantly force the camera back to the user's position when the user intentionally explores the map.
+
+---
+
+# 11. Current Location Marker
+
+The current position marker must update continuously.
+
+The marker should include:
+
+* Latitude/longitude internally
+* GPS accuracy
+* Current speed
+* Optional heading
+* Visual accuracy radius
+
+Example:
+
+```
+       ↑ heading
+      / \
+     / ● \
+       ○
+  accuracy radius
+```
+
+The marker should animate between GPS samples if practical.
+
+Do not visually teleport the marker every time a GPS update arrives.
+
+---
+
+# 12. GPS Tracking Engine
+
+Create a dedicated tracking service.
+
+Example abstraction:
+
+```text
+LocationService
+TrackingService
+JourneyTrackingController
+```
+
+Do not put GPS business logic directly inside widgets.
+
+The GPS service should provide:
+
+* latitude
+* longitude
+* timestamp
+* speed
+* accuracy
+* heading when available
+
+---
+
+# 13. GPS Quality Filtering
+
+GPS data must be filtered before being used.
+
+Reject or ignore:
+
+* Very poor accuracy
+* Duplicate coordinates
 * Impossible jumps
-* Unrealistic speeds
-* Duplicate points
-* Clearly invalid coordinates
-
-GPS signal loss should not crash the journey.
-
----
-
-# 13. Distance Calculation
-
-Calculate journey distance using geographic coordinates.
-
-Distance should be stored internally in meters.
-
-Display distance in kilometers.
+* Unrealistic speed spikes
+* Invalid timestamps
+* Stale location samples
+* Clearly corrupted readings
 
 Example:
 
 ```text
-12450 meters
-→
+GPS sample
+   ↓
+Accuracy validation
+   ↓
+Timestamp validation
+   ↓
+Duplicate detection
+   ↓
+Distance validation
+   ↓
+Speed sanity check
+   ↓
+Accept / Reject
+```
+
+Filtering must prevent:
+
+* 500 km/h walking speed
+* random jumps across cities
+* huge distance increases while stationary
+* route zig-zag caused by GPS noise
+
+---
+
+# 14. Distance Calculation
+
+Distance must be calculated from accepted GPS points.
+
+Use geodesic/Haversine-style distance calculations.
+
+Internal unit:
+
+```text
+meters
+```
+
+Display:
+
+```text
+km
+```
+
+Examples:
+
+```text
+850 m
+2.84 km
 12.45 km
 ```
 
-Do not count invalid GPS jumps toward distance.
+Distance must NOT be calculated from raw unfiltered GPS samples.
 
 ---
 
-# 14. Duration
+# 15. Speed
 
-Journey duration should represent **active journey time**.
+Track:
 
-If the journey is paused:
+* Current speed
+* Average speed
+* Maximum speed
 
-```text
-Active duration stops.
+Display km/h.
+
+Current speed should preferably be derived from reliable GPS speed and/or distance/time between accepted samples.
+
+Ignore unrealistic speed spikes.
+
+Maximum speed must be based on validated samples.
+
+---
+
+# 16. Journey Duration
+
+Track two concepts:
+
+### Total elapsed time
+
+From journey start to journey end.
+
+### Active duration
+
+Only time during which the journey was actively tracking.
+
+Paused time must not contribute to active duration.
+
+Example:
+
+```
+Started: 10:00
+Paused: 10:20
+Resumed: 10:30
+Stopped: 11:00
+
+Elapsed time = 60 min
+Active time = 50 min
 ```
 
-When resumed:
+Average speed should use active duration.
 
-```text
-Active duration continues.
+---
+
+# 17. Pause / Resume
+
+When user presses:
+
+**Pause**
+
+the application must:
+
+* Stop counting active duration
+* Stop adding movement distance
+* Stop adding journey points
+* Keep journey state locally
+* Keep enough information to resume safely
+* Clearly show paused state
+
+Example:
+
+```
+PAUSED
+
+Journey tracking is temporarily paused.
+
+[ Resume Journey ]
+[ Stop Journey ]
 ```
 
-Paused time must not be included in active duration.
+When Resume is pressed:
+
+* Continue tracking
+* Continue active duration
+* Continue route
+* Do not create artificial route segments across the pause
 
 ---
 
-# 15. Speed Calculation
+# 18. Stop Journey
 
-Calculate:
+Pressing Stop should not immediately save.
 
-### Current Speed
+Show confirmation:
 
-Based on recent valid GPS information.
-
-### Average Speed
-
-```text
-distance / active duration
 ```
+End Journey?
 
-### Maximum Speed
+Your journey will be saved locally.
 
-Maximum valid speed observed during the journey.
+Distance       5.82 km
+Active time    42 min
+Avg speed      8.3 km/h
 
-Filter unrealistic GPS spikes.
-
-Do not allow one incorrect GPS reading to create an absurd maximum speed.
-
----
-
-# 16. Pause / Resume
-
-When paused:
-
-* Stop active-duration accumulation.
-* Stop distance accumulation.
-* Stop speed/statistics updates.
-* Keep the journey session alive.
-* Clearly show paused state.
-
-When resumed:
-
-* Continue GPS tracking.
-* Continue active duration.
-* Continue distance calculation.
-* Continue statistics.
-
----
-
-# 17. Stop Journey
-
-When the user presses Stop:
-
-Show confirmation.
+[ Continue ]
+[ End Journey ]
+```
 
 After confirmation:
 
 1. Stop GPS tracking.
-2. Save the final valid point if appropriate.
-3. Calculate final statistics.
-4. Capture current weather if available.
-5. Determine areas covered if possible.
-6. Save the journey locally.
-7. Open Journey Summary.
+2. Capture final valid location.
+3. Finalize statistics.
+4. Fetch weather snapshot.
+5. Determine covered areas.
+6. Save journey.
+7. Show journey summary.
 
 ---
 
-# 18. Journey Summary Screen
+# 19. Background / Minimized Tracking
 
-After completing a journey, display:
+This is a critical requirement.
 
-```text
-Journey Complete
-```
-
-Show:
-
-* Journey mode
-* Date
-* Start time
-* End time
-* Distance
-* Active duration
-* Average speed
-* Maximum speed
-* Weather
-* Areas covered
-* Full route map
-
-The map should display the complete route.
-
-The user should be able to visually understand the exact path they traveled.
-
----
-
-# 19. Areas Covered
-
-Journiq should attempt to determine meaningful areas/locations covered during a journey.
-
-Use reverse geocoding where practical.
-
-Do NOT reverse-geocode every GPS point.
-
-Instead:
-
-* Sample meaningful points.
-* Avoid duplicate locations.
-* Cache results when practical.
-* Handle API limits.
-* Do not block journey saving if geocoding fails.
+The user must be able to minimize Journiq while a journey is running.
 
 Example:
 
-```text
-Dhaka
-Mirpur
-Agargaon
-Farmgate
-Tejgaon
+```
+Start Journey
+      ↓
+Press Home
+      ↓
+Phone screen minimized
+      ↓
+Journiq continues tracking
+      ↓
+User travels
+      ↓
+Return to Journiq
+      ↓
+Current route is still available
 ```
 
-The exact output depends on the reverse-geocoding service.
+Tracking must continue while the application is:
 
-If reverse geocoding is unavailable:
+* Minimized
+* In background
+* Screen locked, where Android/device restrictions allow it
 
-```text
-Areas unavailable
+Use Android foreground-service-compatible location tracking.
+
+The application should display a persistent notification while actively tracking.
+
+Example:
+
+```
+Journiq
+Journey in progress
+
+Walking • 3.42 km
+18 min active
+
+[ Open ]
+[ Pause ]
 ```
 
-should be acceptable.
-
-The journey must still be saved.
+Do not silently lose tracking when the app is backgrounded.
 
 ---
 
-# 20. Weather
+# 20. Android Background Location
 
-Journiq should provide weather information for journeys.
+The implementation must properly handle Android location requirements.
 
-### Current Weather
+Support:
 
-Show:
+* Runtime location permission
+* Location service enabled/disabled
+* Foreground location service
+* Background operation
+* Android lifecycle changes
+* Activity recreation
+* App resume
+* Screen lock/unlock
 
-* Temperature
-* Condition
-* Weather icon
-* Feels-like
-* Humidity
-* Wind
-* Rain probability when available
+Do not assume that foreground-only GPS behavior is sufficient.
 
-### Journey Weather Snapshot
+---
 
-When a journey ends, attempt to save a weather snapshot associated with the journey.
+# 21. Lifecycle Handling
 
-Weather should be treated as an enhancement.
+The tracking engine must be independent of a particular screen widget lifecycle.
 
-If the API fails:
+For example:
+
+The user starts a journey.
+
+Then:
 
 ```text
-Weather unavailable
+LiveScreen
+   ↓
+App minimized
+   ↓
+App background
+   ↓
+Screen locked
+   ↓
+App reopened
 ```
 
-Do not fail the journey.
+The journey must remain alive.
 
-Do not make excessive API requests while tracking.
+Do not tie the tracking subscription only to:
 
----
+```text
+Widget.dispose()
+```
 
-# 21. Offline-First Behavior
-
-Core tracking must work without internet.
-
-Without internet, the user should still be able to:
-
-* Start journey
-* Track GPS
-* Calculate distance
-* Calculate duration
-* Calculate speed
-* Pause
-* Resume
-* Stop
-* Save journey
-* View previous journeys
-* View statistics
-
-Internet-dependent functionality may fail gracefully:
-
-* Map tiles
-* Weather
-* Reverse geocoding
-
-Do not make the entire app dependent on network connectivity.
+The tracking engine should be managed by an application-level service/controller.
 
 ---
 
-# 22. Database
+# 22. Local Journey Persistence
 
-Use SQLite through Drift.
+Production journey data must use:
+
+**SQLite + Drift**
+
+Do not use SharedPreferences as the primary journey database.
+
+SharedPreferences may only be used for small preferences such as:
+
+* onboarding completion
+* theme preference
+* map settings
+* selected units
+
+---
+
+# 23. Database Schema
 
 ## journeys
 
-Suggested fields:
+Fields:
 
 ```text
 id
@@ -689,831 +704,1707 @@ maxSpeedKmh
 
 startLatitude
 startLongitude
-
 endLatitude
 endLongitude
 
 weatherTemperature
 weatherCondition
-weatherFeelsLike
 weatherHumidity
 weatherWindSpeed
 weatherRainProbability
+weatherObservedAt
+
+areasCovered
 
 createdAt
 ```
 
+---
+
 ## journey_points
 
-Suggested fields:
+Fields:
 
 ```text
 id
 journeyId
-
 latitude
 longitude
 timestamp
-
 speedKmh
 accuracyMeters
+heading
 ```
 
-Create a foreign-key relationship:
+Foreign key:
 
 ```text
-journeys.id
-      ↓
 journey_points.journeyId
+        ↓
+journeys.id
 ```
 
-Deleting a journey should also delete its associated GPS points.
+Deleting a journey must also delete its associated journey points.
 
 ---
 
-# 23. Journey History
+# 24. Database Reliability
 
-The Journeys screen should show completed journeys.
+The application must handle:
 
-Newest journeys first.
+* database initialization
+* migrations
+* schema upgrades
+* corrupted/incomplete journey recovery where practical
+* transactions
+* atomic journey save
+* atomic journey deletion
 
-Each item can display:
+A journey must never appear in History without its required data.
+
+---
+
+# 25. Weather
+
+Weather must never block GPS tracking.
+
+Weather is supplementary.
+
+The application should retrieve:
+
+* temperature
+* weather condition
+* humidity
+* wind
+* precipitation/rain probability where available
+
+Use a free/free-tier weather API.
+
+Network failure must not prevent:
+
+* tracking
+* stopping
+* saving
+* history access
+
+---
+
+# 26. Rain Forecast Requirement
+
+The live map should contain a compact weather intelligence card.
+
+Example:
+
+```
+┌─────────────────────────────┐
+│ 🌦 WEATHER                  │
+│ 29°C • Partly Cloudy        │
+│                             │
+│ Rain outlook                │
+│                             │
+│ Next 2 hours                │
+│ 15% → 20% → 35% → 45%       │
+│                             │
+│ Rain may be possible later  │
+└─────────────────────────────┘
+```
+
+The application should communicate:
+
+> Whether rain is likely within approximately the next 2 hours.
+
+Do NOT claim certainty.
+
+Use language such as:
+
+* "Low chance of rain"
+* "Rain may be possible"
+* "Rain probability increasing"
+* "High chance of rain"
+
+The forecast should be based on the selected weather API's available hourly/short-term precipitation data.
+
+If weather data is unavailable:
 
 ```text
-Walking
-12.42 km
-01:24:32
-8.8 km/h
-Weather
-Date
+Weather unavailable
+Tracking is unaffected.
 ```
 
-Use appropriate icons and visual hierarchy.
-
-The list should remain performant even with many journeys.
-
 ---
 
-# 24. Journey Details
+# 27. Weather Card Placement
 
-Selecting a journey should open a detailed screen.
+The weather card should be visually integrated into the map.
 
-Show:
+It should NOT occupy excessive screen space.
 
-* Date
-* Start time
-* End time
-* Mode
-* Duration
-* Distance
-* Average speed
-* Maximum speed
-* Weather
-* Areas covered
-* Complete route map
+Recommended:
 
-The route must be reconstructed from stored GPS points.
+* compact floating card
+* semi-transparent/modern surface
+* expandable details
 
----
-
-# 25. Delete Journey
-
-Allow the user to delete a saved journey.
-
-Show confirmation before deletion.
-
-Deleting a journey must remove:
-
-* Journey record
-* Associated GPS points
-
-Do not leave orphaned GPS records.
-
----
-
-# 26. Statistics
-
-Create a Statistics screen.
-
-Display:
+Possible structure:
 
 ```text
-Total Journeys
-Total Distance
-Total Active Time
-Average Journey Distance
-Average Speed
-Longest Journey
-Maximum Speed
+🌧 32%
+Rain possible within 2h
+29°C
 ```
 
-Also provide:
+Tap:
 
-### Monthly Statistics
+```text
+Weather Details
+```
+
+to show a more detailed forecast.
+
+---
+
+# 28. Areas Covered
+
+Every completed journey should determine the geographical areas visited.
 
 For example:
 
 ```text
-September
+Areas Covered
 
-Distance
-245.8 km
-
-Journeys
-18
-
-Active Time
-31h 42m
+Dhaka
+Mirpur
+Agargaon
+Mohammadpur
 ```
 
-### Mode Statistics
+Implementation should use reverse geocoding.
 
-Show statistics grouped by:
+Important:
 
-* Walking
-* Bicycle
-* Motorcycle
-* Car
-* Bus
-* Train
-* Other
+Do NOT reverse-geocode every GPS point.
 
-Do not require a backend.
+Instead:
 
-All statistics should be generated from the local database.
+1. Sample route points.
+2. Detect meaningful movement.
+3. Reverse-geocode selected points.
+4. Cache results.
+5. Deduplicate area names.
+6. Store the final unique list.
+
+This avoids excessive API calls.
+
+If reverse geocoding fails:
+
+```text
+Areas unavailable
+```
+
+The journey must still save successfully.
 
 ---
 
-# 27. My Journey Map
+# 29. Offline Map / District Map Pack
 
-Create a map view showing accumulated routes from completed journeys.
+Journiq should support an offline-first map experience.
+
+When appropriate map data is available, the application should allow the user to download an offline map pack for their current district.
 
 Example:
 
 ```text
-My Journey Map
+Offline Map
+
+Current area:
+Dhaka District
+
+Map size:
+~XXX MB
+
+[ Download District Map ]
 ```
 
-It should display route polylines from previous journeys.
-
-Requirements:
-
-* Efficient rendering
-* Avoid loading unnecessary GPS points
-* Allow zooming/panning
-* Different journeys should remain distinguishable where practical
-* Work from locally stored journey data
-
----
-
-# 28. Settings
-
-Settings can initially contain:
-
-* Distance unit
-* Speed unit
-* Theme
-* Map preferences
-* Weather preferences
-* About Journiq
-* Privacy information
-
-Keep V1 settings simple.
-
----
-
-# 29. Permissions
-
-Request only permissions that are actually needed.
-
-Location permission must be handled properly.
-
-Handle:
+After download:
 
 ```text
-Permission granted
-Permission denied
-Permission permanently denied
-Location service disabled
+✓ Dhaka District
+Available Offline
 ```
 
-Explain why location is required.
-
-Do not request unnecessary permissions.
-
-If background location is required, first verify the current Android requirements and only implement it if genuinely necessary for the V1 tracking design.
+The exact download size must be calculated from the selected tile/data strategy rather than hardcoded.
 
 ---
 
-# 30. Android Lifecycle
+# 30. District Detection
 
-Handle:
+The application may determine the user's current district through reverse geocoding/geographical metadata.
 
-* App minimized
-* Screen locked
-* App resumed
-* Temporary GPS loss
-* Activity recreation
-* Permission changes
-* Journey in progress
-
-Do not assume the app always remains in the foreground.
-
-The implementation must prevent accidental loss of journey state.
-
----
-
-# 31. Battery Optimization
-
-GPS tracking can consume significant battery.
-
-Use:
-
-* Reasonable location accuracy
-* Distance filters
-* Appropriate update frequency
-* Controlled database writes
-* No unnecessary network calls
-* No repeated reverse geocoding
-* Stop GPS tracking after journey completion
-* Stop unnecessary processing while paused
-
-The goal is reliable tracking without unnecessarily draining the battery.
-
----
-
-# 32. Error Handling
-
-Gracefully handle:
-
-### GPS
-
-* GPS unavailable
-* GPS signal lost
-* Poor accuracy
-* Invalid coordinates
-* GPS jumps
-
-### Permissions
-
-* Permission denied
-* Permanent denial
-* GPS disabled
-
-### Network
-
-* No internet
-* API timeout
-* API error
-* Rate limiting
-
-### Weather
-
-* API unavailable
-* Invalid response
-
-### Geocoding
-
-* API unavailable
-* Rate limit
-* No result
-
-### Database
-
-* Insert failure
-* Read failure
-* Migration failure
-
-### Journey
-
-* Very short journey
-* No valid GPS points
-* Invalid journey state
-
-The app should never crash because weather, maps, or geocoding are unavailable.
-
----
-
-# 33. UI / UX Design
-
-Journiq should look like a modern premium mobile application.
-
-Use:
-
-* Material 3
-* Clean typography
-* Rounded cards
-* Consistent spacing
-* Clear hierarchy
-* Smooth transitions
-* Appropriate icons
-* Accessible touch targets
-* Light and dark theme support
-
-Avoid:
-
-* Cluttered screens
-* Excessive animations
-* Tiny buttons
-* Excessive colors
-* Placeholder-looking UI
-* Fake statistics
-* Static demo data
-
-The application should feel like something that could realistically be published to Google Play.
-
----
-
-# 34. Privacy
-
-Location data is sensitive.
-
-V1 should be local-first.
-
-Do not upload GPS data to any backend.
-
-Do not implement public sharing.
-
-Do not create public user profiles.
-
-Clearly explain that journey data is stored locally in V1.
-
----
-
-# 35. Security
-
-Never:
-
-* Hardcode private API secrets
-* Commit secrets to Git
-* Log sensitive GPS data unnecessarily
-* Include debug logs containing private location data in release builds
-
-For mobile APIs where a client-side API key is inherently exposed, design the integration appropriately and do not treat the key as a server-side secret.
-
----
-
-# 36. Testing
-
-Create meaningful tests for:
-
-### Distance
-
-Verify geographic distance calculation.
-
-### Speed
-
-Verify:
-
-* Current speed
-* Average speed
-* Maximum speed
-* Invalid speed filtering
-
-### Duration
-
-Verify:
-
-* Start
-* Pause
-* Resume
-* Stop
-
-Paused time must not count toward active duration.
-
-### GPS Filtering
-
-Test:
-
-* Poor accuracy
-* Duplicate points
-* GPS jumps
-* Impossible speeds
-
-### Database
-
-Test:
-
-* Insert journey
-* Insert points
-* Read journey
-* Read points
-* Update where required
-* Delete journey
-* Cascade/delete associated points
-
-### Statistics
-
-Verify monthly and mode-based calculations.
-
----
-
-# 37. Performance
-
-The application should remain responsive with a large number of stored journeys and GPS points.
-
-Avoid:
-
-* Loading all GPS points unnecessarily
-* Excessive widget rebuilds
-* Excessive database writes
-* Excessive API calls
-* Reverse geocoding every coordinate
-
-Use pagination or efficient queries for history where appropriate.
-
----
-
-# 38. No Fake Data
-
-Do not use fake journey data in the final application.
-
-During development, mock data may be used only for testing UI if necessary.
-
-The production application must use:
+Example:
 
 ```text
-Real GPS
-Real database
-Real calculations
-Real weather
-Real route data
+Current District
+Dhaka
 ```
 
----
-
-# 39. Release Quality
-
-Before release:
-
-* Remove debug UI.
-* Remove fake data.
-* Remove unnecessary logging.
-* Verify Android permissions.
-* Test on a real Android device.
-* Test GPS tracking outdoors.
-* Test poor GPS conditions.
-* Test pause/resume.
-* Test long journeys.
-* Test app lifecycle.
-* Test offline mode.
-* Test weather failure.
-* Test database persistence.
-* Verify release build.
-* Generate signed AAB.
-
-The application should be ready for Google Play Store submission after proper testing.
+The user should also be able to select another district manually.
 
 ---
 
-# 40. Future V2 Architecture
+# 31. Offline Map Architecture
 
-Do not implement these in V1, but keep the architecture extensible for:
+Do not simply download unlimited OSM tiles blindly.
+
+The implementation must consider:
+
+* OpenStreetMap licensing
+* tile provider terms
+* attribution
+* rate limits
+* storage size
+* zoom level
+* cache management
+* update strategy
+
+Use a proper offline map provider/data package where appropriate.
+
+The application must show required attribution.
+
+Do not hardcode an inappropriate production tile endpoint merely to make offline download work.
+
+---
+
+# 32. Map Modes
+
+Support:
+
+### Online Mode
+
+Map data loads from the configured online provider.
+
+### Offline Mode
+
+Downloaded local map data is used.
+
+### Automatic Mode
+
+Prefer online map when available and fall back to downloaded offline data.
+
+The application should gracefully handle network loss.
+
+---
+
+# 33. Offline Map Download UX
+
+The download screen should show:
 
 ```text
-User Authentication
-        ↓
-Spring Boot Backend
-        ↓
-PostgreSQL
-        ↓
-REST API
-        ↓
-WebSocket
-        ↓
-Live Journey Sharing
+Dhaka District
+
+Map Coverage
+████████████░░░░ 78%
+
+Downloaded: 248 MB
+Estimated remaining: 71 MB
+
+[ Pause ]
+[ Cancel ]
 ```
 
-Potential V2 features:
-
-* User accounts
-* Cloud synchronization
-* Multiple devices
-* Journey sharing
-* Live location
-* Group journeys
-* Friends
-* Journey invitation
-* Journey codes
-* Shared maps
-* Cloud backup
-* Online analytics
-
-The V1 local repository abstraction should make this migration easier.
-
----
-
-# 41. Development Sequence
-
-Implement the project incrementally.
-
-## Step 1 — Environment Check
-
-First inspect:
+After completion:
 
 ```text
-Flutter version
-Dart version
-Android SDK
-Java/JDK
-Android Studio if installed
-VS Code
-Connected Android devices
+✓ Offline map ready
 ```
 
-Do not assume anything is installed.
+Downloads should be resumable if practical.
 
 ---
 
-## Step 2 — Project Foundation
+# 34. My Journey Map
 
-Create:
+Journiq must maintain a cumulative personal map.
+
+This is different from the live journey map.
+
+The My Journey Map shows routes from completed journeys.
+
+Example:
 
 ```text
-trailora
+MY JOURNEY MAP
+
+Total routes: 27
+Total distance: 384.7 km
+
+        ───────
+      ╱
+ ────╯      ─────
+          ╱
+    ─────╯
 ```
 
-but use the application/product name:
+Each completed journey contributes its route.
+
+---
+
+# 35. Cumulative Map Performance
+
+Do NOT load every GPS point from every journey into the map simultaneously.
+
+For large histories:
+
+* simplify polylines
+* downsample points
+* load only visible journeys when possible
+* use spatial filtering
+* avoid unnecessary rebuilds
+* cache simplified route geometry
+
+The map must remain responsive with hundreds of journeys.
+
+---
+
+# 36. History
+
+History must show completed journeys newest first.
+
+Example:
 
 ```text
-Journiq
+Today
+
+🚶 Walking
+5.82 km • 42 min
+Avg 8.3 km/h
+
+Dhaka → Mirpur
+29°C • Partly Cloudy
+
+
+Yesterday
+
+🚗 Car
+18.4 km • 36 min
 ```
 
-Set up:
+Each item should show:
 
-* Flutter project
-* Material 3
-* Theme
-* App colors
-* Typography
-* Navigation
-* App shell
-* Home
-* Journeys
-* Statistics
-* Settings
-
-Do not implement GPS yet.
-
----
-
-## Step 3 — Journey Mode
-
-Implement journey-mode selection.
-
----
-
-## Step 4 — GPS
-
-Implement:
-
-* Permission handling
-* Location service
-* GPS stream
-* Accuracy filtering
-* Point validation
-
----
-
-## Step 5 — Calculations
-
-Implement:
-
+* Mode
+* Date
 * Distance
 * Duration
-* Pause/resume
-* Current speed
 * Average speed
-* Maximum speed
+* Optional start/end area
+* Weather summary
 
 ---
 
-## Step 6 — Map
+# 37. Journey Details
 
-Implement:
+Opening a journey should show:
 
-* OpenStreetMap-based map
-* Current location
-* Start marker
-* Current marker
-* Route polyline
-* Zoom
-* Pan
-* Fit route
+```text
+Walking
+
+5.82 km
+42 min active
+
+Average Speed
+8.3 km/h
+
+Maximum Speed
+12.7 km/h
+
+Start
+10:12 AM
+
+End
+10:54 AM
+
+Weather
+29°C
+Partly Cloudy
+
+Areas Covered
+Mirpur
+Agargaon
+Dhaka
+
+Route
+[ MAP ]
+```
+
+The full route must be rendered.
 
 ---
 
-## Step 7 — Database
+# 38. Delete Journey
 
-Implement Drift database:
+Delete must work.
+
+Before deletion:
+
+```text
+Delete this journey?
+
+This will permanently remove:
+• Journey information
+• Route points
+• Weather snapshot
+• Areas covered
+
+[ Cancel ]
+[ Delete ]
+```
+
+Deletion must remove both:
 
 ```text
 journeys
 journey_points
 ```
 
+using the database relationship.
+
 ---
 
-## Step 8 — Live Journey
+# 39. Statistics
 
-Combine:
+Statistics should provide useful personal analytics.
+
+Minimum:
+
+* Total journeys
+* Total distance
+* Total active time
+* Average journey distance
+* Average speed
+* Longest journey
+* Maximum recorded speed
+* Journeys this month
+* Distance this month
+
+---
+
+# 40. Time Filtering
+
+Monthly statistics must use:
 
 ```text
-GPS
-+
-Map
-+
-Statistics
-+
-Pause/Resume
-+
-Stop
+current year + current month
+```
+
+not merely the month number.
+
+For example:
+
+September 2026 must NOT include:
+
+September 2025
+September 2024
+
+---
+
+# 41. Mode Statistics
+
+Show statistics by transport mode.
+
+Example:
+
+```text
+Walking
+Journeys: 18
+Distance: 72.4 km
+
+Car
+Journeys: 9
+Distance: 182.7 km
+
+Bicycle
+Journeys: 6
+Distance: 129.6 km
+```
+
+Do not present fake data.
+
+If no data exists:
+
+```text
+No journeys yet.
+Start your first journey to see statistics.
 ```
 
 ---
 
-## Step 9 — Journey Summary
+# 42. Futuristic UI Direction
 
-Implement completed journey summary.
+The visual design must be significantly more modern than a standard Flutter starter application.
+
+Avoid:
+
+* old-fashioned large plain cards
+* excessive borders
+* default Flutter-looking buttons
+* unnecessary gradients everywhere
+* excessive glassmorphism
+* clutter
+* huge text
+* poor spacing
+* inconsistent icons
+* placeholder UI
+
+Target aesthetic:
+
+* modern
+* premium
+* clean
+* futuristic
+* mobility/navigation focused
+* map-centric
+* responsive
+* information dense but readable
 
 ---
 
-## Step 10 — History
+# 43. Glass / Surface Design
 
-Implement:
+Use subtle glass/surface effects only where useful.
 
-* Journey list
+For example:
+
+* floating map controls
+* weather card
+* live metric panel
+* bottom control sheet
+
+Avoid turning the entire application into transparent glass.
+
+The map must remain visually dominant.
+
+---
+
+# 44. Color System
+
+Create a consistent design system.
+
+Example conceptual palette:
+
+```text
+Background
+Surface
+Surface Elevated
+Primary
+Secondary
+Success
+Warning
+Danger
+Text Primary
+Text Secondary
+```
+
+The exact colors may be selected by the implementation agent, but they must form a coherent system.
+
+Prefer strong contrast and accessibility.
+
+---
+
+# 45. Typography
+
+Use a modern readable font hierarchy.
+
+Examples:
+
+```text
+Large metric:
+32–40 px
+
+Screen title:
+24–28 px
+
+Section:
+18–20 px
+
+Body:
+14–16 px
+
+Supporting text:
+12–14 px
+```
+
+Do not use oversized typography that consumes useful map space.
+
+---
+
+# 46. Animations
+
+Use subtle, purposeful animations.
+
+Examples:
+
+* Start Journey transition
+* Mode selection
+* GPS marker movement
+* Route drawing
+* Pause/resume
+* Bottom sheet transition
+* Statistics chart entrance
+* Weather updates
+* Recenter animation
+
+Avoid animations that reduce performance.
+
+---
+
+# 47. Performance
+
+The app must remain responsive during GPS tracking.
+
+Do not perform expensive work on the Flutter UI thread.
+
+Avoid:
+
+* rebuilding the entire screen for every GPS point
+* repeatedly rebuilding large polylines unnecessarily
+* reverse-geocoding every point
+* database writes for every tiny UI update
+* unnecessary map controller recreation
+
+Separate:
+
+```text
+GPS ingestion
+Statistics calculation
+Persistence
+Map rendering
+UI state
+```
+
+appropriately.
+
+---
+
+# 48. GPS Persistence Strategy
+
+During an active journey, accepted GPS points should be persisted periodically and/or transactionally enough to protect against app/process interruption.
+
+Do not keep the entire journey only in RAM.
+
+If the app crashes or Android kills the process, the implementation should minimize data loss.
+
+A recoverable active journey state is preferred.
+
+---
+
+# 49. Active Journey Recovery
+
+If the application starts and finds an unfinished journey:
+
+```text
+Journey in progress
+
+A previous journey appears to be active.
+
+[ Resume ]
+[ End & Save ]
+[ Discard ]
+```
+
+Never silently discard a user's active journey.
+
+---
+
+# 50. Error Handling
+
+Errors must be user-friendly.
+
+Do not expose raw exceptions such as:
+
+```text
+PlatformException(...)
+```
+
+Instead:
+
+```text
+Location unavailable
+
+Please enable GPS and try again.
+```
+
+---
+
+# 51. GPS Permission UX
+
+If permission is denied:
+
+```text
+Location permission required
+
+Journiq needs your location to track journeys.
+
+[ Allow Location ]
+```
+
+If permanently denied:
+
+```text
+Location permission is blocked.
+
+Please enable location permission from Android Settings.
+
+[ Open Settings ]
+```
+
+If GPS/location service is disabled:
+
+```text
+Location services are disabled.
+
+Please enable GPS to start tracking.
+
+[ Enable Location ]
+```
+
+---
+
+# 52. GPS Accuracy Indicator
+
+During tracking, optionally show:
+
+```text
+GPS
+±8 m
+```
+
+Possible states:
+
+```text
+Excellent
+Good
+Weak
+Poor
+```
+
+Do not overwhelm the user with technical details.
+
+---
+
+# 53. Empty States
+
+Every empty screen must have a meaningful state.
+
+History:
+
+```text
+No journeys yet.
+
+Your journeys will appear here after you
+complete your first trip.
+
+[ Start Journey ]
+```
+
+Statistics:
+
+```text
+No statistics yet.
+
+Complete a journey to start building your
+personal travel insights.
+```
+
+My Map:
+
+```text
+Your journey map is waiting.
+
+Complete journeys to build your personal
+map of places you've travelled.
+```
+
+---
+
+# 54. Settings
+
+Include:
+
+* Map settings
+* Distance unit
+* Theme
+* Offline maps
+* Location settings
+* Weather settings
+* Data/storage information
+* About Journiq
+
+Avoid unnecessary backend/account settings in V1.
+
+---
+
+# 55. Data Management
+
+Provide a way to understand local storage usage.
+
+Example:
+
+```text
+Journiq Storage
+
+Journeys: 42
+GPS points: 184,392
+
+Database: 18.4 MB
+Offline maps: 612 MB
+```
+
+Optional:
+
+```text
+Clear map cache
+```
+
+Do NOT provide destructive actions without confirmation.
+
+---
+
+# 56. Architecture
+
+Use Clean Architecture.
+
+Suggested:
+
+```text
+lib/
+├── core/
+│   ├── constants/
+│   ├── errors/
+│   ├── extensions/
+│   ├── utils/
+│   ├── theme/
+│   └── widgets/
+│
+├── database/
+│   ├── app_database.dart
+│   ├── tables/
+│   ├── daos/
+│   └── migrations/
+│
+├── features/
+│   ├── home/
+│   ├── journey/
+│   │   ├── data/
+│   │   ├── domain/
+│   │   └── presentation/
+│   ├── history/
+│   ├── statistics/
+│   ├── map/
+│   ├── weather/
+│   └── settings/
+│
+└── main.dart
+```
+
+Business logic must NOT live directly inside widgets.
+
+---
+
+# 57. Service Abstractions
+
+Create clear abstractions.
+
+Examples:
+
+```dart
+abstract class LocationService {}
+
+abstract class WeatherService {}
+
+abstract class GeocodingService {}
+
+abstract class JourneyRepository {}
+
+abstract class MapService {}
+```
+
+Implementation details should be replaceable.
+
+This is important because Journiq may receive a backend in V2.
+
+---
+
+# 58. State Management
+
+Use Riverpod.
+
+Separate state for:
+
+* current journey
+* GPS state
+* tracking state
+* current location
+* route
+* metrics
+* weather
+* history
+* statistics
+* offline maps
+
+Do not use excessive global mutable state.
+
+---
+
+# 59. Map Technology
+
+Use `flutter_map` or another appropriate Flutter mapping library.
+
+Use:
+
+* OpenStreetMap-compatible data/provider
+* `latlong2`
+* appropriate tile provider
+* proper attribution
+
+Do not embed Google Maps unless explicitly required.
+
+---
+
+# 60. Dependencies
+
+Use appropriate packages such as:
+
+```text
+flutter_riverpod
+drift
+drift_flutter
+geolocator
+permission_handler
+flutter_map
+latlong2
+http
+intl
+shared_preferences
+```
+
+Additional packages may be introduced when technically justified.
+
+Avoid unnecessary dependencies.
+
+---
+
+# 61. Security & Privacy
+
+Journiq V1 is local-first.
+
+Location history is sensitive user data.
+
+Therefore:
+
+* Do not upload location data
+* Do not introduce analytics that secretly transmit journey coordinates
+* Do not introduce authentication
+* Do not introduce cloud synchronization
+* Do not expose journey data externally
+
+The user controls their local journey data.
+
+---
+
+# 62. Offline Behavior
+
+Journiq should remain useful without internet.
+
+Without internet:
+
+Still available:
+
+* GPS tracking
+* distance
+* speed
+* duration
+* route recording
+* journey saving
+* history
+* statistics
+* downloaded offline maps
+
+May be unavailable:
+
+* live weather
+* reverse geocoding
+* new map tiles
+* district map download
+
+These failures must not break journey tracking.
+
+---
+
+# 63. Network Failure
+
+Weather failure:
+
+```text
+Weather unavailable
+```
+
+Map network failure:
+
+```text
+Offline map available
+```
+
+Geocoding failure:
+
+```text
+Area information unavailable
+```
+
+Never:
+
+```text
+Journey save failed because weather failed.
+```
+
+---
+
+# 64. Map Location Selection
+
+The user must also be able to manually set/explore a location on the map.
+
+Outside active tracking:
+
+* Search/select a location where technically feasible
+* Tap the map to inspect a location
+* Move the map
+* Recenter to current location
+
+During tracking:
+
+* Current location remains available
+* User can pan/explore
+* Follow Me returns to current location
+
+The implementation should keep this separate from changing the actual GPS tracking position.
+
+A map selection must NOT fake or modify the device's real GPS location.
+
+---
+
+# 65. Journey Start Location
+
+When starting:
+
+1. Request/check permission.
+2. Verify location services.
+3. Wait for a sufficiently accurate initial location.
+4. Display initial position.
+5. Initialize route.
+6. Start tracking.
+7. Start active timer.
+8. Begin persistence.
+
+Do not start a journey with an obviously invalid first point.
+
+---
+
+# 66. Journey Summary
+
+After saving:
+
+```text
+Journey Complete 🎉
+
+Walking
+
+5.82 km
+42 min active
+
+Average
+8.3 km/h
+
+Maximum
+12.7 km/h
+
+Weather
+29°C • Partly Cloudy
+
+Areas
+Mirpur • Agargaon • Dhaka
+
+[ View Journey ]
+[ Done ]
+```
+
+The summary should feel rewarding but not childish.
+
+---
+
+# 67. Real-Time Metrics
+
+During tracking show:
+
+Primary:
+
+```text
+Distance
+Active Time
+Current Speed
+```
+
+Secondary:
+
+```text
+Average Speed
+Max Speed
+GPS Accuracy
+```
+
+Metrics must update even when GPS movement is temporarily low.
+
+The timer must not depend solely on GPS updates.
+
+---
+
+# 68. Tracking State Model
+
+Use explicit states.
+
+Example:
+
+```text
+idle
+starting
+waitingForGps
+tracking
+paused
+stopping
+saving
+completed
+error
+```
+
+This avoids ambiguous UI behavior.
+
+---
+
+# 69. App Lifecycle State Model
+
+Track independently:
+
+```text
+foreground
+background
+locked
+resumed
+```
+
+The tracking engine should remain functional across lifecycle transitions.
+
+---
+
+# 70. Testing Requirements
+
+Unit tests:
+
+### Distance
+
+Verify known coordinate distances.
+
+### Speed
+
+Verify:
+
+* normal movement
+* zero movement
+* unrealistic speed
+* invalid samples
+
+### Duration
+
+Verify:
+
+* start
+* pause
+* resume
+* stop
+* multiple pauses
+
+### GPS filtering
+
+Verify:
+
+* poor accuracy rejected
+* duplicate rejected
+* jump rejected
+* impossible speed rejected
+
+### Database
+
+Verify:
+
+* journey insert
+* point insert
+* journey retrieval
+* point retrieval
+* delete cascade
+* migration
+
+### Statistics
+
+Verify:
+
+* total distance
+* average speed
+* maximum speed
+* monthly filtering
+* current year/month filtering
+* mode statistics
+
+---
+
+# 71. Widget Tests
+
+Test:
+
+* Home
+* Mode selection
+* Live journey
+* Pause state
+* Stop confirmation
+* History
 * Journey details
-* Delete journey
-
----
-
-## Step 11 — Weather
-
-Implement:
-
-* Current weather
-* Weather snapshot
-* Error handling
-
----
-
-## Step 12 — Areas Covered
-
-Implement reverse geocoding and meaningful area extraction.
-
----
-
-## Step 13 — Statistics
-
-Implement:
-
-* Overall statistics
-* Monthly statistics
-* Mode statistics
-* My Journey Map
-
----
-
-## Step 14 — UI Polish
-
-Improve:
-
-* Typography
-* Spacing
-* Icons
-* Animations
-* Dark mode
+* Statistics
 * Empty states
-* Error states
-* Loading states
+* Weather unavailable state
 
 ---
 
-## Step 15 — Real Device Testing
+# 72. Integration / Device Testing
 
-Test on a physical Android device.
+Must test on a real Android device.
 
-Test actual journeys.
+Primary test device:
+
+```text
+Redmi K20 Pro
+Android 11 / API 30
+```
+
+Test:
+
+* permission flow
+* GPS
+* real movement
+* background tracking
+* screen lock
+* minimize app
+* resume app
+* pause/resume
+* stop/save
+* history
+* deletion
+* statistics
+* weather failure
+* offline behavior
 
 ---
 
-## Step 16 — Release
+# 73. UI Runtime Safety
+
+The application must have:
+
+* no duplicate Hero tags
+* no ParentDataWidget assertions
+* no overflow errors
+* no broken navigation
+* no dead buttons
+* no placeholder functionality presented as complete
+* no infinite loading state
+* no crashes during lifecycle changes
+
+Every visible action must actually work.
+
+---
+
+# 74. Performance Testing
+
+Check:
+
+```text
+flutter analyze
+flutter test
+flutter build appbundle --release
+```
+
+During device testing monitor:
+
+* CPU
+* RAM
+* frame rendering
+* GPS update frequency
+* battery impact
+* database growth
+
+Avoid unnecessary rebuilds.
+
+---
+
+# 75. Release Build
 
 Generate:
 
 ```text
-Signed Android App Bundle (.aab)
+AAB
 ```
 
-Prepare the application for Google Play submission.
+using release configuration.
+
+Verify:
+
+* application name Journiq
+* proper launcher icon
+* Android permissions
+* release build succeeds
+* no debug-only behavior
+* no development URLs
+* no placeholder content
 
 ---
 
-# 42. Coding Agent Instructions
+# 76. Branding
 
-You are working as a senior Flutter engineer.
+Application name:
 
-Before writing code:
+**Journiq**
 
-1. Inspect the existing environment.
-2. Check Flutter/Dart/Android/JDK versions.
-3. Check connected devices.
-4. Inspect the project directory.
-5. Do not overwrite existing work unnecessarily.
+Tagline:
 
-Then:
+**Track Every Journey.**
 
-1. Explain the current environment briefly.
-2. Explain the proposed project structure.
-3. Explain dependencies.
-4. Explain the implementation plan.
-5. Implement only the requested development step.
-6. Run Flutter analyzer.
-7. Run tests where applicable.
-8. Fix errors.
-9. Verify the application builds.
+Do not use:
 
-Do NOT generate hundreds of files blindly.
+```text
+com.example.journiq
+```
 
-Do NOT implement the entire application in one step.
+as the final production identity if a proper package/application ID can be selected.
 
-Build Journiq incrementally.
-
-After completing each major step, verify it before moving to the next step.
+Use an appropriate production package namespace.
 
 ---
 
-# 43. Important Engineering Rules
+# 77. Explicitly Excluded From V1
 
-Follow these rules throughout the project:
+Do NOT implement:
 
-* Keep business logic outside widgets.
-* Prefer small, testable classes.
-* Avoid unnecessary dependencies.
-* Use null safety properly.
-* Use meaningful names.
-* Keep code readable.
-* Avoid duplicated logic.
-* Handle errors explicitly.
-* Avoid memory leaks.
-* Dispose streams/controllers correctly.
-* Avoid excessive database writes.
-* Avoid excessive network calls.
-* Keep GPS tracking battery-conscious.
-* Keep the UI responsive.
-* Do not block the main isolate with expensive work.
-* Do not hardcode secrets.
-* Do not use fake production data.
+* Spring Boot backend
+* PostgreSQL backend
+* Firebase backend
+* Authentication
+* User accounts
+* WebSocket
+* Cloud synchronization
+* Live location sharing
+* Friends
+* Social feed
+* Group journeys
+* Kubernetes
+* Admin panel
+* Server-side analytics
+* Chat
+* Social profiles
+
+V1 is strictly:
+
+> Personal + Local + GPS + Map + Journey Analytics.
 
 ---
 
-# 44. Product Goal
+# 78. Future V2 Compatibility
 
-The final V1 should feel like a real application.
+Although V1 is local-first, architecture should make future backend integration possible.
 
-A user should be able to install Journiq on an Android phone and realistically use it to track their daily journeys.
+Potential V2:
 
-The core experience should be:
+```text
+Flutter App
+     ↓
+API
+     ↓
+Backend
+     ↓
+PostgreSQL
+```
+
+But V1 must NOT implement this.
+
+Repositories and services should use abstractions so a remote implementation can be introduced later.
+
+---
+
+# 79. Critical Product Quality Requirement
+
+The implementation agent must NOT assume that an existing feature is correct merely because code exists.
+
+Before declaring the project complete:
+
+1. Read this specification completely.
+2. Audit the entire existing repository.
+3. Identify incomplete or fake functionality.
+4. Fix architectural problems.
+5. Fix UI/UX problems.
+6. Fix GPS problems.
+7. Fix background tracking.
+8. Fix database architecture.
+9. Fix map following.
+10. Implement offline map functionality properly.
+11. Implement weather intelligence.
+12. Implement areas covered.
+13. Implement cumulative journey map.
+14. Test the complete journey lifecycle.
+15. Test on the real Redmi K20 Pro.
+16. Run static analysis.
+17. Run all tests.
+18. Build release AAB.
+
+Do not simply report that something is "implemented" because a class or widget exists.
+
+Verify the actual behavior.
+
+---
+
+# 80. Definition of Done
+
+Journiq V1 is considered complete only when this complete scenario works:
 
 ```text
 Open Journiq
       ↓
-See weather + statistics
+Home screen
       ↓
 Start Journey
       ↓
-Select Journey Mode
+Select Walking
       ↓
-GPS starts
+Location permission
       ↓
-Live map shows current position
+GPS fix
       ↓
-Route is drawn
+Live map opens
       ↓
-Distance / Duration / Speed update
+Current location appears
       ↓
-Pause / Resume if necessary
+Camera follows user
       ↓
-Stop Journey
+User moves
+      ↓
+Route grows
+      ↓
+Distance updates
+      ↓
+Current speed updates
+      ↓
+Average speed updates
+      ↓
+Weather card displays
+      ↓
+Rain outlook for next ~2 hours displays
+      ↓
+User pans map
+      ↓
+Follow mode pauses
+      ↓
+Follow Me button appears
+      ↓
+User taps Follow Me
+      ↓
+Camera follows again
+      ↓
+User minimizes app
+      ↓
+Tracking continues
+      ↓
+User locks screen
+      ↓
+Tracking continues where Android permits
+      ↓
+User opens app again
+      ↓
+Route and metrics are preserved
+      ↓
+User pauses
+      ↓
+Active duration stops
+      ↓
+User resumes
+      ↓
+Tracking continues
+      ↓
+User stops journey
+      ↓
+Confirmation
+      ↓
+Final GPS point
+      ↓
+Statistics calculated
+      ↓
+Weather snapshot
+      ↓
+Areas Covered
+      ↓
+SQLite/Drift transaction
+      ↓
+Journey saved
       ↓
 Journey Summary
       ↓
-Weather + Areas Covered + Route
+History
       ↓
-Journey saved locally
+Journey Details
       ↓
-View History
+Full route map
       ↓
-View Statistics
+Delete journey
       ↓
-View My Journey Map
+Database records removed
+      ↓
+Statistics updated
+      ↓
+My Journey Map updated
 ```
 
-### Final Product Identity
+Every step must work.
 
-**Journiq**
+---
 
-**Track Every Journey.**
+# 81. Final Implementation Instruction For AI Agent
 
-The application should be simple enough for everyday use, technically well-structured enough for future backend integration, and polished enough to serve as a genuine Google Play Store project.
+You are responsible for completing the Journiq application described in this document.
+
+Do not create a superficial demo.
+
+Do not replace real functionality with mock data.
+
+Do not leave buttons that do nothing.
+
+Do not silently omit difficult requirements.
+
+If a requirement requires an architectural change, perform the architectural change.
+
+If an existing implementation is wrong, replace it.
+
+Prioritize correctness over preserving existing code.
+
+Before changing anything:
+
+```text
+Read the complete specification.
+Inspect the entire repository.
+Understand the existing architecture.
+```
+
+Then implement systematically.
+
+Use production-quality Flutter/Dart practices.
+
+Keep business logic outside widgets.
+
+Use Riverpod for state management.
+
+Use Drift/SQLite for journey persistence.
+
+Implement robust Android GPS/background tracking.
+
+Implement Google-Maps-like camera following behavior.
+
+Implement a proper current-location experience.
+
+Implement offline map support with compliant map data/provider usage.
+
+Implement weather and short-term rain outlook without making weather a dependency of tracking.
+
+Implement Areas Covered.
+
+Implement My Journey Map.
+
+Make the UI futuristic, modern, responsive, and map-centric.
+
+Do not overuse glassmorphism.
+
+Do not modify this specification file unless explicitly instructed.
+
+---
+
+# 82. Required Final Verification Report
+
+After implementation, report:
+
+## Repository
+
+* Files changed
+* Architecture
+* Major features
+
+## GPS
+
+* Permission handling
+* Accuracy filtering
+* Background tracking
+* Lifecycle handling
+* Camera following
+* Current location behavior
+
+## Database
+
+* Drift schema
+* Tables
+* Relationships
+* Migrations
+* Delete behavior
+
+## Maps
+
+* Online map
+* Offline map
+* District download
+* Current location
+* Follow mode
+* Route polyline
+* My Journey Map
+
+## Weather
+
+* API/provider
+* Current weather
+* Next ~2 hour rain outlook
+* Failure behavior
+
+## Areas
+
+* Reverse geocoding
+* Sampling
+* Deduplication
+* Caching
+* Failure behavior
+
+## Testing
+
+Report exact results of:
+
+```bash
+flutter pub get
+flutter analyze
+flutter test
+flutter build appbundle --release
+```
+
+Also report real-device testing on:
+
+```text
+Redmi K20 Pro
+Android 11 / API 30
+```
+
+Include any known limitations honestly.
+
+Do not claim a feature is complete if it was not actually verified.
