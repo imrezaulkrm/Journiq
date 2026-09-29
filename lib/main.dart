@@ -1,36 +1,120 @@
-// ignore_for_file: annotate_overrides, curly_braces_in_flow_control_structures, deprecated_member_use, dead_code, dead_null_aware_expression
-import 'dart:async';
-import 'dart:convert';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/theme/app_theme.dart';
+import 'features/settings/providers/settings_provider.dart';
+import 'features/shell_screen.dart';
+import 'features/update/data/app_update_service.dart';
+import 'features/update/domain/update_info.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-enum JourneyMode { walking, bicycle, motorcycle, car, bus, train, other }
-extension ModeInfo on JourneyMode { String get label => const ['Walking','Bicycle','Motorcycle','Car','Bus','Train','Other'][index]; IconData get icon => const [Icons.directions_walk,Icons.directions_bike,Icons.two_wheeler,Icons.directions_car,Icons.directions_bus,Icons.train,Icons.explore][index]; }
-String fmtDuration(int s) => '${(s~/3600).toString().padLeft(2,'0')}:${((s%3600)~/60).toString().padLeft(2,'0')}:${(s%60).toString().padLeft(2,'0')}';
-class TrackPoint { const TrackPoint(this.lat,this.lng,this.time,this.speed,this.accuracy); final double lat,lng,speed,accuracy; final DateTime time; double get kmh=>speed*3.6; Map<String,dynamic> toJson()=>{'lat':lat,'lng':lng,'time':time.toIso8601String(),'speed':speed,'accuracy':accuracy}; factory TrackPoint.fromJson(Map<String,dynamic> j)=>TrackPoint((j['lat'] as num).toDouble(),(j['lng'] as num).toDouble(),DateTime.parse(j['time']),((j['speed']??0) as num).toDouble(),((j['accuracy']??0) as num).toDouble()); }
-double pointDistance(TrackPoint a,TrackPoint b)=>Geolocator.distanceBetween(a.lat,a.lng,b.lat,b.lng);
-double routeDistance(List<TrackPoint> p){var d=0.0;for(var i=1;i<p.length;i++)d+=pointDistance(p[i-1],p[i]);return d;}
-class Journey { Journey({required this.id,required this.mode,required this.start,required this.end,required this.points,required this.activeSeconds,required this.distance,this.weather='Weather unavailable',this.areas=const[]}); final String id;final JourneyMode mode;final DateTime start,end;final List<TrackPoint> points;final int activeSeconds;final double distance;final String weather;final List<String> areas; double get average=>activeSeconds==0?0:distance/activeSeconds*3.6; double get maxSpeed=>points.fold(0,(m,p)=>math.max(m,p.kmh)); Map<String,dynamic> toJson()=>{'id':id,'mode':mode.index,'start':start.toIso8601String(),'end':end.toIso8601String(),'active':activeSeconds,'distance':distance,'weather':weather,'areas':areas,'points':points.map((p)=>p.toJson()).toList()}; factory Journey.fromJson(Map<String,dynamic> j)=>Journey(id:j['id'],mode:JourneyMode.values[j['mode']],start:DateTime.parse(j['start']),end:DateTime.parse(j['end']),activeSeconds:j['active'],distance:(j['distance'] as num).toDouble(),weather:j['weather']??'Weather unavailable',areas:((j['areas']??[]) as List).cast<String>(),points:(j['points'] as List).map((p)=>TrackPoint.fromJson(p)).toList()); }
-abstract class JourneyRepository { Future<List<Journey>> all(); Future<void> save(Journey j); Future<void> delete(String id); }
-class LocalJourneyRepository implements JourneyRepository { static const key='journiq.journeys.v2'; Future<List<Journey>> all()async{final p=await SharedPreferences.getInstance();try{return jsonDecode(p.getString(key)??'[]').map<Journey>((j)=>Journey.fromJson(j)).toList().cast<Journey>();}catch(_){return[];}} Future<void> save(Journey j)async{final p=await SharedPreferences.getInstance(),a=await all();a.removeWhere((x)=>x.id==j.id);a.insert(0,j);await p.setString(key,jsonEncode(a.map((x)=>x.toJson()).toList()));} Future<void> delete(String id)async{final p=await SharedPreferences.getInstance(),a=await all();a.removeWhere((x)=>x.id==id);await p.setString(key,jsonEncode(a.map((x)=>x.toJson()).toList()));} }
-class LocationService { Future<bool> ready()async{if(!await Geolocator.isLocationServiceEnabled())return false;var p=await Geolocator.checkPermission();if(p==LocationPermission.denied)p=await Geolocator.requestPermission();return p==LocationPermission.always||p==LocationPermission.whileInUse;} Future<Position> current()=>Geolocator.getCurrentPosition(locationSettings:const LocationSettings(accuracy:LocationAccuracy.high,timeLimit:Duration(seconds:15))); Stream<Position> stream()=>Geolocator.getPositionStream(locationSettings:const LocationSettings(accuracy:LocationAccuracy.best,distanceFilter:8)); }
-class WeatherService { Future<String> get(LatLng p)async{try{final r=await http.get(Uri.parse('https://api.open-meteo.com/v1/forecast?latitude=${p.latitude}&longitude=${p.longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m')).timeout(const Duration(seconds:6));if(r.statusCode!=200)return'Weather unavailable';final x=jsonDecode(r.body)['current'];return '${x['temperature_2m']}°C • feels ${x['apparent_temperature']}°C • humidity ${x['relative_humidity_2m']}% • wind ${x['wind_speed_10m']} km/h';}catch(_){return'Weather unavailable';}} }
-class TrackingSession { TrackingSession(this.mode,this.changed); final JourneyMode mode;final VoidCallback changed;final service=LocationService();final points=<TrackPoint>[];StreamSubscription<Position>? sub;Timer? timer;DateTime? started,pausedAt;int pausedSeconds=0;bool paused=false,running=false; Future<void> start()async{started=DateTime.now();running=true;timer=Timer.periodic(const Duration(seconds:1),(_)=>changed());sub=service.stream().listen((p){if(!running||paused||p.accuracy<=0||p.accuracy>80||p.speed<0||p.speed>75)return;final x=TrackPoint(p.latitude,p.longitude,p.timestamp,p.speed,p.accuracy);if(points.isNotEmpty){final gap=pointDistance(points.last,x),sec=x.time.difference(points.last.time).inMilliseconds/1000;if(gap<5||(sec>0&&gap/sec>75))return;}points.add(x);changed();},onError:(_)=>changed());} void pause(){if(!paused){paused=true;pausedAt=DateTime.now();changed();}} void resume(){if(paused){pausedSeconds+=DateTime.now().difference(pausedAt!).inSeconds;pausedAt=null;paused=false;changed();}} int get active{if(started==null)return 0;final p=paused&&pausedAt!=null?DateTime.now().difference(pausedAt!).inSeconds:0;return math.max(0,DateTime.now().difference(started!).inSeconds-pausedSeconds-p);} Future<Journey> stop()async{final end=DateTime.now();if(paused&&pausedAt!=null)pausedSeconds+=end.difference(pausedAt!).inSeconds;running=false;await sub?.cancel();timer?.cancel();return Journey(id:end.microsecondsSinceEpoch.toString(),mode:mode,start:started!,end:end,points:List.of(points),activeSeconds:active,distance:routeDistance(points));} }
-void main()=>runApp(const JourniqApp());
-class JourniqApp extends StatelessWidget{const JourniqApp({super.key});Widget build(BuildContext c)=>MaterialApp(debugShowCheckedModeBanner:false,title:'Journiq',theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:const Color(0xff176b5d)),scaffoldBackgroundColor:const Color(0xfff6f8f7)),darkTheme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:const Color(0xff65d6ba),brightness:Brightness.dark)),home:const Shell());}
-class Shell extends StatefulWidget{const Shell({super.key});State<Shell> createState()=>_Shell();}class _Shell extends State<Shell>{int i=0;final r=LocalJourneyRepository();Widget build(BuildContext c){final s=[Home(r,start:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>Choose(r)))),History(r),Stats(r),const Settings()];return Scaffold(body:SafeArea(child:s[i]),bottomNavigationBar:NavigationBar(selectedIndex:i,onDestinationSelected:(x)=>setState(()=>i=x),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined),selectedIcon:Icon(Icons.home),label:'Home'),NavigationDestination(icon:Icon(Icons.route_outlined),selectedIcon:Icon(Icons.route),label:'Journeys'),NavigationDestination(icon:Icon(Icons.insights_outlined),selectedIcon:Icon(Icons.insights),label:'Statistics'),NavigationDestination(icon:Icon(Icons.settings_outlined),selectedIcon:Icon(Icons.settings),label:'Settings')]));}}
-class Home extends StatefulWidget{const Home(this.r,{super.key,required this.start});final JourneyRepository r;final VoidCallback start;State<Home> createState()=>_Home();}class _Home extends State<Home>{List<Journey> j=[];String weather='Weather unavailable';void initState(){super.initState();load();}Future<void>load()async{j=await widget.r.all();if(mounted)setState((){});try{final p=await LocationService().current();weather=await WeatherService().get(LatLng(p.latitude,p.longitude));if(mounted)setState((){});}catch(_){}}Widget build(BuildContext c){final n=DateTime.now(),m=j.where((x)=>x.start.year==n.year&&x.start.month==n.month);return RefreshIndicator(onRefresh:load,child:ListView(padding:const EdgeInsets.all(20),children:[Text('Journiq',style:Theme.of(c).textTheme.displaySmall?.copyWith(fontWeight:FontWeight.w800)),Text('Track Every Journey.',style:Theme.of(c).textTheme.titleMedium),const SizedBox(height:24),Card(color:Theme.of(c).colorScheme.primary,child:Padding(padding:const EdgeInsets.all(20),child:Text(weather,style:TextStyle(color:Theme.of(c).colorScheme.onPrimary,fontWeight:FontWeight.bold)))),const SizedBox(height:24),Text('This month',style:Theme.of(c).textTheme.titleLarge),Row(children:[Expanded(child:Metric('${(m.fold(0.0,(s,x)=>s+x.distance)/1000).toStringAsFixed(1)} km','Distance')),Expanded(child:Metric('${m.length}','Journeys')),Expanded(child:Metric(fmtDuration(m.fold(0,(s,x)=>s+x.activeSeconds)),'Active time'))]),const SizedBox(height:20),FilledButton.icon(onPressed:widget.start,icon:const Icon(Icons.play_arrow),label:const Padding(padding:EdgeInsets.all(14),child:Text('Start Journey'))),const SizedBox(height:20),...j.take(3).map((x)=>Tile(x,widget.r,load))]));}}
-class Metric extends StatelessWidget{const Metric(this.value,this.label,{super.key});final String value,label;Widget build(BuildContext c)=>Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(children:[Text(value,style:const TextStyle(fontWeight:FontWeight.bold)),Text(label,style:Theme.of(c).textTheme.labelSmall)])));}
-class Choose extends StatefulWidget{const Choose(this.r,{super.key});final JourneyRepository r;State<Choose> createState()=>_Choose();}class _Choose extends State<Choose>{JourneyMode mode=JourneyMode.walking;Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:const Text('Choose journey mode')),body:ListView(padding:const EdgeInsets.all(20),children:[Text('How are you travelling?',style:Theme.of(c).textTheme.headlineSmall),...JourneyMode.values.map((x)=>Card(child:RadioListTile(value:x,groupValue:mode,onChanged:(v)=>setState(()=>mode=v!),title:Text(x.label),secondary:Icon(x.icon)))),FilledButton.icon(onPressed:()=>Navigator.pushReplacement(c,MaterialPageRoute(builder:(_)=>Live(mode:mode,r:widget.r))),icon:const Icon(Icons.navigation),label:const Text('Start tracking'))]));}
-class Live extends StatefulWidget{const Live({super.key,required this.mode,required this.r});final JourneyMode mode;final JourneyRepository r;State<Live> createState()=>_Live();}class _Live extends State<Live> with WidgetsBindingObserver{late TrackingSession t;bool ready=false;String? error;void initState(){super.initState();WidgetsBinding.instance.addObserver(this);t=TrackingSession(widget.mode,()=>mounted?setState((){}):null);begin();}Future<void>begin()async{final s=t.service;if(!await s.ready()){setState(()=>error='Location is disabled or permission was denied. Enable GPS and allow location access.');return;}try{await s.current();await t.start();setState(()=>ready=true);}catch(_){setState(()=>error='GPS position unavailable. Move outdoors and try again.');}}void didChangeAppLifecycleState(AppLifecycleState x){if(x==AppLifecycleState.resumed&&error!=null)begin();}void dispose(){WidgetsBinding.instance.removeObserver(this);t.stop();super.dispose();}Future<void>finish()async{final yes=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('Stop journey?'),content:const Text('The route will be saved locally.'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('Keep tracking')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('Stop and save'))]));if(yes!=true)return;final j=await t.stop();Journey done=j;if(j.points.isNotEmpty)done=Journey(id:j.id,mode:j.mode,start:j.start,end:j.end,points:j.points,activeSeconds:j.activeSeconds,distance:j.distance,weather:await WeatherService().get(LatLng(j.points.last.lat,j.points.last.lng)));await widget.r.save(done);if(mounted)Navigator.pushReplacement(context,MaterialPageRoute(builder:(_)=>Detail(done)));}Widget build(BuildContext c){final route=t.points.map((p)=>LatLng(p.lat,p.lng)).toList(),center=route.isEmpty?const LatLng(23.8103,90.4125):route.last;return Scaffold(body:error!=null?Center(child:Padding(padding:const EdgeInsets.all(25),child:Column(mainAxisSize:MainAxisSize.min,children:[const Icon(Icons.location_off,size:55),Text('Location access needed',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold)),Text(error!,textAlign:TextAlign.center),FilledButton(onPressed:()=>Navigator.pop(c),child:const Text('Back'))]))):Stack(children:[FlutterMap(options:MapOptions(initialCenter:center,initialZoom:15),children:[TileLayer(urlTemplate:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',userAgentPackageName:'com.journiq.app'),PolylineLayer(polylines:[Polyline(points:route,color:Theme.of(c).colorScheme.primary,strokeWidth:5)]),MarkerLayer(markers:route.isEmpty?[]:[Marker(point:route.last,width:44,height:44,child:const Icon(Icons.my_location,color:Colors.red))])]),Positioned(top:45,left:12,right:12,child:Card(child:Padding(padding:const EdgeInsets.all(14),child:Row(mainAxisAlignment:MainAxisAlignment.spaceAround,children:[Text('${(routeDistance(t.points)/1000).toStringAsFixed(2)} km'),Text(fmtDuration(t.active)),Text('${(t.active==0?0:routeDistance(t.points)/t.active*3.6).toStringAsFixed(1)} km/h'),Text('${t.points.isEmpty?0:t.points.map((p)=>p.kmh).reduce(math.max).toStringAsFixed(1)} max')])))),Positioned(bottom:25,left:18,right:18,child:Row(children:[Expanded(child:FilledButton.icon(onPressed:ready?()=>setState(()=>t.paused?t.resume():t.pause()):null,icon:Icon(t.paused?Icons.play_arrow:Icons.pause),label:Text(t.paused?'Resume':'Pause'))),const SizedBox(width:12),Expanded(child:FilledButton.tonalIcon(onPressed:ready?finish:null,icon:const Icon(Icons.stop),label:const Text('Stop')))]))]));}}
-class History extends StatefulWidget{const History(this.r,{super.key});final JourneyRepository r;State<History> createState()=>_History();}class _History extends State<History>{List<Journey> j=[];void initState(){super.initState();load();}Future<void>load()async{j=await widget.r.all();if(mounted)setState((){});}Widget build(BuildContext c)=>RefreshIndicator(onRefresh:load,child:ListView(padding:const EdgeInsets.all(20),children:[Text('Journeys',style:Theme.of(c).textTheme.headlineMedium),if(j.isEmpty)const Padding(padding:EdgeInsets.all(50),child:Text('No journeys yet.')), ...j.map((x)=>Tile(x,widget.r,load,tap:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>Detail(x)))))]));}
-class Tile extends StatelessWidget{const Tile(this.j,this.r,this.changed,{super.key,this.tap});final Journey j;final JourneyRepository r;final VoidCallback changed;final VoidCallback? tap;Widget build(BuildContext c)=>Card(margin:const EdgeInsets.only(bottom:10),child:ListTile(onTap:tap,leading:CircleAvatar(child:Icon(j.mode.icon)),title:Text(j.mode.label),subtitle:Text('${(j.distance/1000).toStringAsFixed(2)} km • ${fmtDuration(j.activeSeconds)}\n${DateFormat('d MMM yyyy, h:mm a').format(j.start)}'),isThreeLine:true,trailing:IconButton(icon:const Icon(Icons.delete_outline),onPressed:()async{final y=await showDialog<bool>(context:c,builder:(c)=>AlertDialog(title:const Text('Delete journey?'),content:const Text('This removes the route points too.'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('Cancel')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('Delete'))]));if(y==true){await r.delete(j.id);changed();}})));}
-class Detail extends StatelessWidget{const Detail(this.j,{super.key});final Journey j;Widget build(BuildContext c){final p=j.points.map((x)=>LatLng(x.lat,x.lng)).toList();return Scaffold(appBar:AppBar(title:const Text('Journey summary')),body:ListView(children:[SizedBox(height:280,child:FlutterMap(options:MapOptions(initialCenter:p.isEmpty?const LatLng(23.8103,90.4125):p.first,initialZoom:13),children:[TileLayer(urlTemplate:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',userAgentPackageName:'com.journiq.app'),PolylineLayer(polylines:[Polyline(points:p,color:Theme.of(c).colorScheme.primary,strokeWidth:5)])])),Padding(padding:const EdgeInsets.all(20),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Journey complete',style:Theme.of(c).textTheme.headlineSmall),Text('${j.mode.label} • ${DateFormat('d MMM yyyy').format(j.start)}'),Wrap(children:[Metric('${(j.distance/1000).toStringAsFixed(2)} km','Distance'),Metric(fmtDuration(j.activeSeconds),'Active'),Metric('${j.average.toStringAsFixed(1)} km/h','Average'),Metric('${j.maxSpeed.toStringAsFixed(1)} km/h','Max')]),Text('Weather',style:Theme.of(c).textTheme.titleMedium),Text(j.weather),Text('Areas covered',style:Theme.of(c).textTheme.titleMedium),Text(j.areas.isEmpty?'Areas unavailable':j.areas.join(' • '))]))]));}}
-class Stats extends StatefulWidget{const Stats(this.r,{super.key});final JourneyRepository r;State<Stats> createState()=>_Stats();}class _Stats extends State<Stats>{List<Journey> j=[];void initState(){super.initState();load();}Future<void>load()async{j=await widget.r.all();if(mounted)setState((){});}Widget build(BuildContext c){final d=j.fold(0.0,(s,x)=>s+x.distance),t=j.fold(0,(s,x)=>s+x.activeSeconds),longest=j.isEmpty?0:j.map((x)=>x.distance).reduce(math.max),max=j.isEmpty?0:j.map((x)=>x.maxSpeed).reduce(math.max);return RefreshIndicator(onRefresh:load,child:ListView(padding:const EdgeInsets.all(20),children:[Text('Statistics',style:Theme.of(c).textTheme.headlineMedium),GridView.count(shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),crossAxisCount:2,children:[Metric('${j.length}','Total journeys'),Metric('${(d/1000).toStringAsFixed(1)} km','Total distance'),Metric(fmtDuration(t),'Active time'),Metric('${(j.isEmpty?0:d/j.length/1000).toStringAsFixed(1)} km','Average distance'),Metric('${(t==0?0:d/t*3.6).toStringAsFixed(1)} km/h','Average speed'),Metric('${(longest/1000).toStringAsFixed(1)} km','Longest'),Metric('${max.toStringAsFixed(1)} km/h','Maximum speed')]),Text('By mode',style:Theme.of(c).textTheme.titleLarge),...JourneyMode.values.map((m)=>ListTile(leading:Icon(m.icon),title:Text(m.label),trailing:Text('${j.where((x)=>x.mode==m).length}')))]));}}
-class Settings extends StatelessWidget{const Settings({super.key});Widget build(BuildContext c)=>ListView(padding:const EdgeInsets.all(20),children:[Text('Settings',style:Theme.of(c).textTheme.headlineMedium),const ListTile(leading:Icon(Icons.straighten),title:Text('Distance unit'),subtitle:Text('Kilometres')),const ListTile(leading:Icon(Icons.speed),title:Text('Speed unit'),subtitle:Text('Kilometres per hour')),const ListTile(leading:Icon(Icons.map_outlined),title:Text('Map preferences'),subtitle:Text('OpenStreetMap')),const Divider(),const ListTile(leading:Icon(Icons.lock_outline),title:Text('Privacy'),subtitle:Text('Journey data is stored locally on this device.'))]);}
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Set immersive navigation and status bar style
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.black,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+
+  runApp(
+    const ProviderScope(
+      child: JourniqApp(),
+    ),
+  );
+}
+
+class JourniqApp extends ConsumerWidget {
+  const JourniqApp({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Journiq',
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: settings.themeMode,
+      home: const UpdateGate(child: ShellScreen()),
+    );
+  }
+}
+
+class UpdateGate extends StatefulWidget {
+  final Widget child;
+  const UpdateGate({super.key, required this.child});
+
+  @override
+  State<UpdateGate> createState() => _UpdateGateState();
+}
+
+class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
+  // Configure this with the real company/Play Store JSON endpoint for release.
+  static final _service = AppUpdateService(currentVersion: '1.0.0');
+  UpdateInfo? _info;
+  bool _checking = true;
+  bool _optionalShown = false;
+  DateTime? _lastCheck;
+
+  @override
+  void initState() { super.initState(); WidgetsBinding.instance.addObserver(this); _check(); }
+  @override
+  void dispose() { WidgetsBinding.instance.removeObserver(this); super.dispose(); }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && (_lastCheck == null || DateTime.now().difference(_lastCheck!) > const Duration(hours: 6))) _check();
+  }
+
+  Future<void> _check() async {
+    _lastCheck = DateTime.now();
+    final info = await _service.check();
+    if (mounted) setState(() { _info = info; _checking = false; });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_checking && _service.configurationUri != null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final requirement = _info?.requirementFor(_service.currentVersion) ?? UpdateRequirement.none;
+    if (requirement == UpdateRequirement.mandatory) return _UpdateRequired(info: _info!);
+    if (requirement == UpdateRequirement.optional && !_optionalShown) {
+      _optionalShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showOptional(context, _info!));
+    }
+    return widget.child;
+  }
+
+  void _showOptional(BuildContext context, UpdateInfo info) {
+    if (!mounted) return;
+    showDialog<void>(context: context, builder: (_) => AlertDialog(
+      title: const Text('New update available'),
+      content: Text('Version ${info.latestVersion}\n\n${info.releaseNotes}'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Later')),
+        FilledButton(onPressed: () { Navigator.pop(context); launchUrl(Uri.parse(info.updateUrl), mode: LaunchMode.externalApplication); }, child: const Text('Update')),
+      ],
+    ));
+  }
+}
+
+class _UpdateRequired extends StatelessWidget {
+  final UpdateInfo info;
+  const _UpdateRequired({required this.info});
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: Center(child: Padding(padding: const EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [
+      const Icon(Icons.system_update_rounded, size: 56),
+      const SizedBox(height: 18),
+      const Text('Update Required', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+      const SizedBox(height: 12),
+      const Text('This version of Journiq is no longer supported.\nPlease update to continue.', textAlign: TextAlign.center),
+      const SizedBox(height: 24),
+      FilledButton(onPressed: () => launchUrl(Uri.parse(info.updateUrl), mode: LaunchMode.externalApplication), child: const Text('Update Now')),
+    ]))),
+  );
+}

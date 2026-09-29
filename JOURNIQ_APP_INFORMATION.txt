@@ -1,0 +1,761 @@
+JOURNIQ APPLICATION INFORMATION
+================================
+
+This document describes the current Journiq implementation in this repository.
+It is based on the current source code and describes how the app actually works.
+
+
+1. APPLICATION PURPOSE
+----------------------
+
+Journiq is a local-first Flutter journey and mobility tracker. It records trips
+using GPS, stores journey data in a local Drift/SQLite database, renders live
+routes on a Flutter Map, and provides history, statistics, weather, area
+coverage, offline map tiles, settings, and update-checking support.
+
+The application does not use a tracking backend, authentication, Firebase, or
+social features. Journey data is persisted locally on the device.
+
+
+2. TECHNOLOGY STACK
+-------------------
+
+- Flutter and Dart.
+- Riverpod / StateNotifier for application state and dependency injection.
+- Drift with SQLite for local persistence.
+- Geolocator for location permissions and GPS streams.
+- Flutter Map with latlong2 for map rendering.
+- OpenStreetMap tile URLs for map tiles.
+- Custom offline tile storage/provider/downloader.
+- Open-Meteo weather service.
+- Nominatim reverse geocoding.
+- SharedPreferences for user settings and cached update configuration.
+- HTTP for remote weather, geocoding, and update configuration requests.
+- url_launcher for configurable update destinations.
+
+
+3. STARTUP FLOW
+---------------
+
+The entry point is lib/main.dart.
+
+1. Flutter bindings are initialized.
+2. System UI/status/navigation bar styling is configured.
+3. The app is started inside a Riverpod ProviderScope.
+4. JourniqApp loads theme settings from settingsProvider.
+5. MaterialApp is created with light and dark themes.
+6. UpdateGate is used as the home widget.
+7. UpdateGate checks the optional AppUpdateService configuration. The current
+   implementation has no production configuration URI assigned, so startup is
+   normally allowed immediately.
+8. ShellScreen becomes the main application container.
+9. ShellScreen checks Drift for an unfinished active journey and offers:
+   - Discard
+   - End and Save
+   - Resume Tracking
+
+
+4. APPLICATION NAVIGATION
+-------------------------
+
+ShellScreen provides the main bottom navigation:
+
+- Home: dashboard and journey start entry point.
+- Start/Tracking: starts a journey or opens the currently active journey.
+- My Map: cumulative map of saved journeys.
+- Statistics: mobility statistics and mode summaries.
+- History: saved journey list and journey details.
+
+The settings screen is opened from the app bar settings button.
+
+If a journey is active, selecting the journey tab opens LiveJourneyScreen
+instead of starting a second tracking session.
+
+
+5. RIVERPOD PROVIDERS
+---------------------
+
+The main providers are defined in
+lib/features/journey/providers/tracking_provider.dart.
+
+- databaseProvider
+  Creates one AppDatabase instance and closes it on provider disposal.
+
+- journeyRepositoryProvider
+  Provides DriftJourneyRepository.
+
+- locationServiceProvider
+  Provides GeolocatorLocationService through the ILocationService interface.
+
+- weatherServiceProvider
+  Provides OpenMeteoWeatherService through IWeatherService.
+
+- geocodingServiceProvider
+  Provides NominatimGeocodingService through IGeocodingService.
+
+- trackingProvider
+  Provides TrackingNotifier and the current TrackingMetrics state.
+
+Other feature providers expose history, statistics, settings, cumulative map
+data, offline map state, and offline storage.
+
+
+6. JOURNEY MODES
+----------------
+
+JourneyMode supports:
+
+- Walking
+- Bicycle
+- Motorcycle
+- Car
+- Bus
+- Train
+- Other
+
+Each mode has a label, Material icon, and maximum plausible speed used by the
+GPS quality filter:
+
+- Walking: 22 km/h
+- Bicycle: 65 km/h
+- Motorcycle: 170 km/h
+- Car: 190 km/h
+- Bus: 130 km/h
+- Train: 260 km/h
+- Other: 180 km/h
+
+The mode is stored as its enum index in the database and restored safely with
+JourneyModeX.fromIndex.
+
+
+7. STARTING A JOURNEY
+---------------------
+
+The start flow is controlled by TrackingNotifier.startJourney.
+
+1. State changes to starting.
+2. Location service availability is checked.
+3. Location permission is checked/requested.
+4. State changes to waitingForGps.
+5. A high-accuracy initial GPS position is requested with a 12-second limit.
+6. A unique journey ID is created from the current timestamp.
+7. A GpsQualityFilter is created for the selected mode.
+8. TrackingMetrics is initialized with the initial point, zero distance, zero
+   speed, and zero maximum speed.
+9. An ActiveJourneys row is saved for crash/restart recovery.
+10. A draft Journeys row is created.
+11. The initial point is buffered and persisted.
+12. The one-second ticker starts.
+13. The Geolocator position stream starts.
+14. LiveJourneyScreen is opened by ShellScreen/HomeScreen.
+
+
+8. GPS LOCATION SERVICE
+-----------------------
+
+lib/features/journey/data/services/location_service.dart contains the location
+abstraction and Geolocator implementation.
+
+The service supports:
+
+- Check whether location services are enabled.
+- Check/request permissions.
+- Open location settings.
+- Open app settings.
+- Get one current position.
+- Subscribe to a continuous position stream.
+
+On Android, the stream requests best accuracy, a 2-meter distance filter, and
+one-second intervals. A foreground notification is used so tracking can remain
+active in the background. A wake lock is enabled by the foreground location
+configuration.
+
+Each Geolocator Position is converted into TrackingPoint. The raw device speed
+is converted from meters/second to km/h, but the validated speed pipeline does
+not trust that value for the final displayed speed.
+
+
+9. GPS QUALITY FILTERING
+------------------------
+
+The filter is implemented in:
+
+lib/features/journey/domain/services/gps_quality_filter.dart
+
+The filter evaluates each candidate point in stages:
+
+1. Accuracy validation
+   Accuracy must be positive and no worse than 25 meters.
+
+2. Timestamp freshness
+   Points older than 15 seconds are rejected.
+
+3. Future timestamp validation
+   Points more than 5 seconds in the future are rejected.
+
+4. Initial baseline handling
+   The first valid point becomes the previous-point anchor.
+
+5. Duplicate detection
+   Identical coordinates are rejected.
+
+6. Time interval validation
+   Out-of-order and intervals at or below 0.2 seconds are rejected.
+
+7. Dwell/jitter filtering
+   Small movements under 3 meters with near-zero movement speed are treated as
+   stationary GPS jitter and rejected.
+
+8. Mode-aware speed sanity
+   Coordinate-derived speed above the selected mode limit is rejected.
+
+Only accepted points are added to the route and persisted.
+
+Rejected points do not update current location, distance, speed, max speed, or
+the persisted route.
+
+
+10. VALIDATED SPEED CALCULATION
+-------------------------------
+
+lib/features/journey/domain/services/validated_speed_calculator.dart calculates
+movement speed from validated coordinate distance and timestamp difference.
+
+It deliberately does not use the raw Geolocator speed as the final value.
+
+The calculation:
+
+1. Calculates haversine distance between the previous valid point and current
+   candidate.
+2. Divides distance by elapsed seconds and converts to km/h.
+3. Limits the value to the selected mode's plausible maximum.
+4. Stores a short recent-speed window.
+5. Uses the median of that window to reduce isolated spikes.
+6. Applies an EMA with alpha 0.55 to reduce visible oscillation without making
+   the display excessively slow.
+7. Forces very small values to zero.
+8. Suppresses stationary movement and converges it toward zero.
+
+The accepted point is reconstructed with this validated speed. That accepted
+point is used consistently for:
+
+- Current live speed.
+- Maximum speed.
+- Persisted point speed.
+- Route point state.
+
+Average speed is calculated from validated accumulated distance divided by
+active elapsed time.
+
+
+11. TRACKING STATE AND METRICS
+------------------------------
+
+TrackingStatus values are:
+
+- idle
+- starting
+- waitingForGps
+- tracking
+- paused
+- stopping
+- saving
+- completed
+- error
+
+TrackingMetrics contains:
+
+- Journey ID.
+- Journey mode.
+- Tracking status.
+- Distance in meters.
+- Active duration in seconds.
+- Current speed in km/h.
+- Average speed in km/h.
+- Maximum speed in km/h.
+- GPS accuracy.
+- Heading when available.
+- Current TrackingPoint.
+- All accepted route points.
+- Error message.
+
+The one-second ticker increments active duration while tracking and recalculates
+average speed. Active journey metadata is written to Drift every 10 seconds.
+
+GPS updates add validated points, calculate incremental haversine distance,
+update speed/maximum/accuracy/heading, and append the point to the route.
+Points are persisted in batches of 10 during tracking.
+
+
+12. PAUSING, RESUMING, AND RECOVERY
+------------------------------------
+
+Pause changes the state to paused and saves the active journey metadata.
+
+Resume changes the state back to tracking and updates active recovery metadata.
+
+The GPS subscription and ticker are owned by TrackingNotifier, not by the live
+screen, so the tracking engine is independent from widget lifecycle.
+
+On app startup ShellScreen asks TrackingNotifier to check ActiveJourneys. If an
+unfinished row exists, its saved points and metrics are restored. The user can
+discard it, end and save it, or resume the live journey.
+
+
+13. STOPPING AND SAVING A JOURNEY
+---------------------------------
+
+stopAndSaveJourney performs these operations:
+
+1. Changes state to saving.
+2. Cancels the ticker.
+3. Cancels the GPS subscription.
+4. Flushes all remaining buffered points.
+5. Requests a final weather snapshot using the last point.
+6. Extracts covered areas using sampled reverse geocoding.
+7. Saves journey metadata and all points transactionally.
+8. Stores weather and area information.
+9. Clears active recovery state.
+10. Changes state to completed.
+
+LiveJourneyScreen then opens JourneySummaryScreen.
+
+
+14. DRIFT DATABASE
+------------------
+
+The database is defined in lib/database/app_database.dart and uses schema
+version 1. SQLite foreign keys are enabled so deleting a journey cascades to
+its points.
+
+Tables:
+
+Journeys
+- id
+- mode
+- startTime
+- endTime
+- activeDurationSeconds
+- distanceMeters
+- averageSpeedKmh
+- maxSpeedKmh
+- optional start/end latitude and longitude
+- weather temperature, condition, humidity, wind, rain probability, observedAt
+- JSON-encoded areasCovered
+- createdAt
+
+JourneyPoints
+- auto-incrementing id
+- journeyId foreign key to Journeys
+- latitude
+- longitude
+- timestamp
+- speedKmh
+- accuracyMeters
+- optional heading
+
+ActiveJourneys
+- id primary key
+- mode
+- start time
+- active duration
+- distance
+- max speed
+- paused flag
+- optional paused time
+- last updated time
+
+DAOs provide journey queries, point batch inserts/reads, active-journey lookup,
+and active-journey cleanup. Generated Drift files are database implementation
+output and should not be manually edited.
+
+
+15. JOURNEY REPOSITORY
+----------------------
+
+JourneyRepository is the abstraction used by TrackingNotifier. The concrete
+DriftJourneyRepository:
+
+- Creates draft journeys.
+- Inserts point batches.
+- Reads all journeys.
+- Watches journey lists.
+- Reads individual journeys and points.
+- Deletes journeys.
+- Queries journeys by month.
+- Saves/reads/clears active recovery state.
+- Saves complete journeys in a Drift transaction.
+
+The repository converts between domain TrackingPoint objects and Drift rows.
+
+
+16. LIVE MAP SCREEN
+-------------------
+
+LiveJourneyScreen is the active journey map screen.
+
+It contains:
+
+- FlutterMap.
+- Existing online/offline tile provider.
+- Route PolylineLayer.
+- Accuracy CircleLayer.
+- Current location MarkerLayer.
+- Top weather HUD.
+- Back button.
+- Follow Me button when follow mode is disabled.
+- Bottom live metrics HUD.
+
+The map starts near the current location at zoom 16 and supports normal Flutter
+Map interaction flags. The current route is taken from validated TrackingPoints.
+
+
+17. MAP FOLLOWING
+-----------------
+
+lib/features/map/controllers/map_following_controller.dart owns the live map
+camera-follow state.
+
+Behavior:
+
+- Follow mode starts enabled.
+- Manual map gestures disable follow and stop any active camera animation.
+- Automatic follow ignores movements under 3 meters.
+- Automatic follow moves the map camera to the validated location while keeping
+  the current zoom.
+- This keeps the current-location marker approximately fixed while the map
+  moves beneath it.
+- The controller avoids overlapping automatic camera animations.
+- Follow Me restores follow mode and recenters on the current point.
+- Manual recentering remains animated for a smoother explicit user action.
+
+The controller includes heading normalization helpers, but current behavior does
+not force compass rotation, tilt, or navigation perspective.
+
+
+18. CURRENT LOCATION MARKER
+---------------------------
+
+CurrentLocationMarker provides:
+
+- A subtle accuracy circle clamped to a practical display range.
+- A neon/white dominant position marker.
+- An optional heading pointer when heading exists.
+- Accuracy status text used by the metrics HUD.
+
+The marker is rendered above the route. Weather and metrics remain separate
+floating overlays and are positioned away from the map center as much as
+possible.
+
+
+19. LIVE METRICS HUD
+--------------------
+
+LiveMetricsPanel displays:
+
+- Transport mode.
+- GPS accuracy status.
+- Distance.
+- Active time.
+- Current speed.
+- Average speed.
+- Maximum speed.
+- Pause/resume action.
+- Stop action.
+
+It uses the existing FuturisticCard glass treatment with restrained blur,
+transparency, borders, and compact spacing. A paused banner appears when the
+journey is paused.
+
+
+20. WEATHER
+-----------
+
+Weather data is retrieved from Open-Meteo by WeatherService.
+
+The service requests current:
+
+- Temperature.
+- Relative humidity.
+- Weather code/condition.
+- Wind speed.
+
+It also requests short-term precipitation probability and weather outlook data.
+The service caches the last known snapshot in memory to avoid repeated requests.
+
+The live screen fetches weather near the initial/current journey position and
+displays it in FloatingWeatherCard at the top of the map. The card can expand
+to show rain outlook, humidity, and wind. Weather failure does not stop GPS
+tracking; the card displays an unavailable state.
+
+At journey completion, a separate weather snapshot is saved into the journey
+record when available.
+
+
+21. REVERSE GEOCODING AND AREAS
+-------------------------------
+
+NominatimGeocodingService reverse-geocodes coordinates and extracts a useful
+area from suburb, neighborhood, quarter, residential, city district, town,
+city, county, or state district fields.
+
+It has an in-memory cache keyed by rounded coordinate values and uses a short
+HTTP timeout.
+
+AreasCoveredExtractor samples the route approximately every 1.5 km, always
+starts with the first point, optionally adds the final point when sufficiently
+far away, reverse-geocodes sampled locations, and deduplicates area names.
+
+Area extraction runs during final save and failures are ignored so journey save
+can still complete.
+
+
+22. HISTORY
+----------
+
+HistoryScreen watches saved journeys from Drift and displays journey summaries.
+
+JourneyDetailScreen loads a saved journey and its points, renders its route on a
+map, and displays journey metrics, weather information, and covered areas.
+
+Journeys can be deleted. Because of the foreign key cascade, associated route
+points are deleted with the journey.
+
+
+23. CUMULATIVE MAP
+------------------
+
+MyJourneyMapScreen displays all saved journeys together.
+
+CumulativeMapProvider loads saved journeys and their points, simplifies route
+geometry with the Ramer-Douglas-Peucker utility for performance, and exposes
+cumulative route data.
+
+It calculates total route count and total distance. Routes retain their
+journey ID, mode, date, distance, and simplified LatLng list.
+
+
+24. OFFLINE MAPS
+---------------
+
+Offline map functionality is under lib/features/offline_map.
+
+The system includes:
+
+- District map definitions.
+- Offline map state/provider.
+- Tile downloader.
+- Offline tile storage.
+- Offline tile provider.
+- Offline maps management screen.
+
+The downloader requests map tiles for configured district bounds and zoom ranges,
+stores them locally, tracks download progress/status, and supports cancellation
+through the provider/controller.
+
+JourniqTileProvider checks local offline storage and falls back to network tile
+loading according to the existing tile architecture. This allows cached map
+areas to remain useful without connectivity.
+
+
+25. SETTINGS
+-----------
+
+Settings are stored in SharedPreferences through SettingsNotifier.
+
+Persisted settings:
+
+- Theme mode: dark/light/system-compatible enum selection.
+- Distance unit: kilometers or miles.
+- Speed unit: km/h or mph.
+
+The current live formatters and UI use the existing settings/theme architecture.
+The default theme is dark, default distance is kilometers, and default speed is
+km/h.
+
+
+26. STATISTICS
+-------------
+
+StatisticsProvider derives MobilityStatistics from saved journeys.
+
+It calculates:
+
+- Total journey count.
+- Total distance.
+- Total active time.
+- Average journey distance.
+- Overall average speed from total distance / total active time.
+- Highest recorded journey maximum speed.
+- Longest journey.
+- Current-month journey count.
+- Current-month distance.
+- Per-mode journey count and distance.
+
+StatisticsScreen presents these values with empty-state handling when no journeys
+exist.
+
+
+27. UPDATE SYSTEM
+-----------------
+
+Update code is isolated under lib/features/update.
+
+UpdateInfo contains:
+
+- latestVersion
+- minimumSupportedVersion
+- updateUrl
+- releaseNotes
+
+UpdateRequirement has:
+
+- none
+- optional
+- mandatory
+
+VersionComparator compares numeric semantic version components instead of plain
+strings. It supports values such as 1.0.9, 1.0.10, 1.1.0, and 2.0.0.
+
+AppUpdateService:
+
+- Accepts an optional configuration URI.
+- Uses a six-hour cache TTL by default.
+- Uses a four-second request timeout.
+- Saves the last valid JSON response in SharedPreferences.
+- Returns cached information when the network request fails.
+- Ignores malformed/incomplete responses.
+- Returns null when no configuration URI is provided.
+
+UpdateGate:
+
+- Allows normal startup when there is no configured endpoint.
+- Can show an optional update dialog with Update/Later.
+- Can block the app for a verified mandatory update.
+- Opens the configurable updateUrl with url_launcher.
+- Rechecks after resume only when the cache interval has elapsed.
+
+There is currently no real production update endpoint configured in main.dart.
+The mechanism is implemented but requires a real company, private distribution,
+APK, or Play Store configuration endpoint before production enforcement should
+be enabled.
+
+
+28. THEMING AND VISUAL DESIGN
+-----------------------------
+
+The theme is defined under lib/core/theme.
+
+The app uses:
+
+- Dark and light theme definitions.
+- Journiq color constants.
+- Typography constants.
+- FuturisticCard for selected glass surfaces.
+- EmptyStateView for empty screens.
+
+Glass treatment is intentionally used for selected HUDs and important floating
+surfaces rather than every screen element. The live map is the dominant visual
+surface.
+
+
+29. UTILITIES
+------------
+
+DistanceCalculator provides haversine distance calculations.
+
+Formatters formats:
+
+- Distances.
+- Durations.
+- Speeds.
+- Dates and journey summaries.
+
+PolylineSimplifier reduces route point count for cumulative/history map use.
+
+AppConstants centralizes:
+
+- App name/package/user-agent.
+- OSM tile URL.
+- GPS accuracy/timestamp/jitter thresholds.
+- Speed smoothing constants.
+- Geocoding sampling distance.
+
+
+30. BACKGROUND AND ANDROID BEHAVIOR
+-----------------------------------
+
+Android uses a MainActivity under com.journiq.app.
+
+Geolocator Android settings provide a foreground notification during active
+tracking and enable a wake lock. Android permissions and service declarations
+are defined in AndroidManifest.xml.
+
+The tracking engine is not owned by LiveJourneyScreen. Leaving the live screen
+does not automatically stop the journey; the user can return through the
+tracking tab or recovery flow.
+
+
+31. TESTS
+---------
+
+Current tests include:
+
+- Basic Flutter widget harness test.
+- Validated speed derived from GPS coordinates rather than raw device speed.
+- GPS stale/duplicate/poor-accuracy/impossible-jump rejection.
+- Stationary GPS jitter convergence to zero.
+- Semantic version comparison.
+- Optional and mandatory update state detection.
+- Malformed version safety.
+
+
+32. BUILD AND VERIFICATION COMMANDS
+-----------------------------------
+
+Typical verification commands:
+
+flutter pub get
+flutter analyze
+flutter test
+flutter build apk --debug
+
+For a connected Android test device:
+
+adb devices
+adb install -r build/app/outputs/flutter-apk/app-debug.apk
+
+
+33. CURRENT LIMITATIONS AND NOTES
+---------------------------------
+
+- The production update configuration endpoint is not configured yet.
+- Physical GPS accuracy depends on device conditions, permissions, and Android
+  battery/background restrictions.
+- Reverse geocoding depends on network availability and Nominatim response
+  quality.
+- Online map tiles depend on network access unless the required area is cached
+  offline.
+- Existing Flutter analyzer output includes deprecation/info warnings from older
+  APIs such as withOpacity and radio group properties.
+- The generated Drift file should be regenerated with build_runner if database
+  table definitions change.
+- The app currently stores all journey route points locally; very large journey
+  histories may require future pagination or additional route simplification in
+  UI-specific screens.
+
+
+34. IMPORTANT PRESERVATION RULES
+--------------------------------
+
+The current implementation intentionally preserves:
+
+- Drift database and local persistence.
+- Riverpod providers and TrackingNotifier architecture.
+- Validated GPS filtering and speed calculation.
+- Flutter Map and offline map architecture.
+- Weather service and weather HUD.
+- Journey history and statistics.
+- Existing route and current-location marker behavior.
+- Local-first operation without a tracking backend.
+
