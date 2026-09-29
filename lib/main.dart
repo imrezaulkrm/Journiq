@@ -56,7 +56,12 @@ class UpdateGate extends StatefulWidget {
 
 class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
   // Configure this with the real company/Play Store JSON endpoint for release.
-  static final _service = AppUpdateService(currentVersion: '1.0.0');
+  static final _service = AppUpdateService(
+    currentVersion: '1.0.0',
+    configurationUri: Uri.parse(
+      'https://imrezaulkrm.github.io/journiq/update.json',
+    ),
+  );
   UpdateInfo? _info;
   bool _checking = true;
   bool _optionalShown = false;
@@ -72,9 +77,54 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
   }
 
   Future<void> _check() async {
+    debugPrint('[Journiq UpdateGate] _check() started');
+    debugPrint(
+      '[Journiq UpdateGate] service URI=${_service.configurationUri}',
+    );
+    debugPrint(
+      '[Journiq UpdateGate] current version=${_service.currentVersion}',
+    );
+
     _lastCheck = DateTime.now();
-    final info = await _service.check();
-    if (mounted) setState(() { _info = info; _checking = false; });
+
+    try {
+      final info = await _service.check(force: true);
+
+      debugPrint(
+        '[Journiq UpdateGate] check completed: $info',
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _info = info;
+        _checking = false;
+      });
+
+      if (info != null) {
+        debugPrint(
+          '[Journiq UpdateGate] latest=${info.latestVersion}',
+        );
+
+        debugPrint(
+          '[Journiq UpdateGate] minimum=${info.minimumSupportedVersion}',
+        );
+
+        debugPrint(
+          '[Journiq UpdateGate] requirement='
+          '${info.requirementFor(_service.currentVersion)}',
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[Journiq UpdateGate] ERROR: $e');
+      debugPrint('$stackTrace');
+
+      if (!mounted) return;
+
+      setState(() {
+        _checking = false;
+      });
+    }
   }
 
   @override
@@ -93,7 +143,10 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
     if (!mounted) return;
     showDialog<void>(context: context, builder: (_) => AlertDialog(
       title: const Text('New update available'),
-      content: Text('Version ${info.latestVersion}\n\n${info.releaseNotes}'),
+      content: Text(
+        'Version ${info.latestVersion}\n\n'
+        '${info.releaseNotes.map((e) => '• $e').join('\n')}',
+      ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Later')),
         FilledButton(onPressed: () { Navigator.pop(context); launchUrl(Uri.parse(info.updateUrl), mode: LaunchMode.externalApplication); }, child: const Text('Update')),
