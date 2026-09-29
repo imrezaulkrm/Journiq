@@ -78,7 +78,7 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/branding/journiq_icon.png"
+  image_path: "assets/branding/journiq_icon_black.png"
 
   # To add assets to your application, add an assets section, like this:
   # assets:

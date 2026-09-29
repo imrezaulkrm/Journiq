@@ -1,0 +1,12 @@
+stages:
+  - info
+
+pipeline-info:
+  stage: info
+  image: alpine:latest
+  script:
+    - echo "No pipeline configured for branch $CI_COMMIT_REF_NAME"
+  rules:
+    - when: always
+  tags:
+    - dev

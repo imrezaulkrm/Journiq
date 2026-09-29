@@ -4,7 +4,6 @@ stages:
   - sonar
   - build
   - deploy
-  - trigger_argo
   - notify
 
 # ════════════════════════════════════════════════════════════
@@ -15,7 +14,7 @@ stages:
 flutter-analyze:
   stage: analyze
   image: ghcr.io/cirruslabs/flutter:stable
-  resource_group: android-dev-analyze
+  resource_group: android-qa-analyze
   script:
     - |
       /bin/bash <<'EOF'
@@ -38,12 +37,12 @@ flutter-analyze:
       when: always
     - when: never
   tags:
-    - dev
+    - qa
 
 flutter-test:
   stage: test
   image: ghcr.io/cirruslabs/flutter:stable
-  resource_group: android-dev-test
+  resource_group: android-qa-test
   needs: ['flutter-analyze']
   script:
     - |
@@ -70,12 +69,12 @@ flutter-test:
       when: always
     - when: never
   tags:
-    - dev
+    - qa
 
 sonarqube-report:
   stage: sonar
   image: registry.cloudaes.com/base-images/sonar-node24:v1
-  resource_group: android-dev-sonar
+  resource_group: android-qa-sonar
   needs: ['flutter-test']
   script:
     - |
@@ -88,11 +87,11 @@ sonarqube-report:
           curl -s -X POST -H "Content-Type: application/json" -d "$payload" "$GOOGLE_CHAT_WEBHOOK_URL" || echo "Failed to send notification"
         }
 
-        export SONAR_PROJECT_KEY=android-app-dev
-        export SONAR_PROJECT_NAME="Android App Dev"
+        export SONAR_PROJECT_KEY=android-app-qa
+        export SONAR_PROJECT_NAME="Android App QA"
 
-        git fetch origin "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-dev}" --depth=100 || \
-          git fetch origin "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-dev}" --unshallow || true
+        git fetch origin "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-qa}" --depth=100 || \
+          git fetch origin "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-qa}" --unshallow || true
 
         sonar-scanner \
           -Dsonar.host.url="$SONAR_URL" \
@@ -167,7 +166,6 @@ sonarqube-report:
 
         if [ "$STATUS" = "OK" ]; then EMOJI="✅"; else EMOJI="❌"; fi
 
-        # MR এ comment
         if [ -n "$CI_MERGE_REQUEST_IID" ]; then
           COMMENT="${EMOJI} **SonarQube Quality Gate: ${STATUS}**
         - Branch: ${CI_COMMIT_REF_NAME}
@@ -185,7 +183,6 @@ sonarqube-report:
             "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}/notes"
         fi
 
-        # Google Chat notify
         CHAT_TEXT="${EMOJI} *SonarQube Quality Gate: ${STATUS}*
         *Project:* ${CI_PROJECT_NAME}
         *Branch:* ${CI_COMMIT_REF_NAME}
@@ -210,19 +207,17 @@ sonarqube-report:
       when: on_success
     - when: never
   tags:
-    - dev
+    - qa
 
 # ════════════════════════════════════════════════════════════
-# DEV BRANCH এ PUSH হলে (merge পরে)
-# Flutter Web Build → Harbor → ArgoCD → Browser Preview URL
+# QA BRANCH এ PUSH হলে (merge পরে)
+# APK Build + Sign → GitLab Artifacts + Nexus → Google Chat
 # ════════════════════════════════════════════════════════════
 
-build-web-preview:
+build-apk:
   stage: build
-  image: registry.cloudaes.com/base-images/aes-docker:24.0.5-cli
-  services:
-    - docker:24.0.5-dind
-  resource_group: android-dev
+  image: ghcr.io/cirruslabs/flutter:stable
+  resource_group: android-qa
   script:
     - |
       /bin/bash <<'EOF'
@@ -234,42 +229,56 @@ build-web-preview:
           curl -s -X POST -H "Content-Type: application/json" -d "$payload" "$GOOGLE_CHAT_WEBHOOK_URL" || echo "Failed to send notification"
         }
 
-        IMAGE_NAME="registry.cloudaes.com/android-app/android-app-web-preview"
-        IMAGE_TAG="dev-latest"
+        MR_IID=$(git log -1 --pretty=%B | grep -oP 'See merge request .*!\K\d+')
+        APK_TAG="$(date +'%d%b')-mr${MR_IID}-b${CI_PIPELINE_IID}"
+        export APK_TAG
 
-        echo "$harborpass" | docker login registry.cloudaes.com -u "$harboruser" --password-stdin \
-          || { send_notification "Build Failure" "Docker login failed 😱"; exit 1; }
+        [ -n "$APK_TAG" ] || { send_notification "Build Failure" "APK tag empty 😱"; exit 1; }
 
-        docker build \
-          --build-arg BUILD_TARGET=web \
-          --build-arg DART_ENV=dev \
-          -t "$IMAGE_NAME:$IMAGE_TAG" . \
-          || { send_notification "Build Failure" "Web preview build failed 🔨"; exit 1; }
+        # Keystore inject
+        echo "$KEYSTORE_BASE64" | base64 -d > android/app/keystore.jks \
+          || { send_notification "Build Failure" "Keystore inject failed 🔑"; exit 1; }
 
-        docker push "$IMAGE_NAME:$IMAGE_TAG" \
-          || { send_notification "Build Failure" "Harbor push failed 🛑"; exit 1; }
+        # Version set
+        sed -i "s/^version:.*/version: 1.0.0+${CI_PIPELINE_IID}/" pubspec.yaml
 
-        docker rmi "$IMAGE_NAME:$IMAGE_TAG" || true
+        flutter pub get || { send_notification "Build Failure" "pub get failed 😱"; exit 1; }
 
-        send_notification "Build Success" "Web preview image pushed, deploying... 🚀"
+        flutter build apk --release \
+          --dart-define=ENV=qa \
+          || { send_notification "Build Failure" "APK build failed 🔨"; exit 1; }
+
+        # APK rename with version tag
+        mv build/app/outputs/apk/release/app-release.apk \
+           build/app/outputs/apk/release/android-app-qa-${APK_TAG}.apk
+
+        echo "APK_TAG=${APK_TAG}" > /tmp/apk_info.env
+
+        send_notification "Build Success" "APK built, uploading... 📦"
       EOF
+  artifacts:
+    paths:
+      - build/app/outputs/apk/release/android-app-qa-*.apk
+    reports:
+      dotenv: /tmp/apk_info.env
+    expire_in: 30 days
   retry:
     max: 2
     when:
       - runner_system_failure
       - stuck_or_timeout_failure
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "dev"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "qa"'
       when: always
     - when: never
   tags:
-    - dev
+    - qa
 
-update-manifest:
+upload-nexus:
   stage: deploy
   image: registry.cloudaes.com/base-images/aes-git:v1.0.2
-  resource_group: android-dev
-  needs: ['build-web-preview']
+  resource_group: android-qa
+  needs: ['build-apk']
   script:
     - |
       /bin/bash <<'EOF'
@@ -281,77 +290,67 @@ update-manifest:
           curl -s -X POST -H "Content-Type: application/json" -d "$payload" "$GOOGLE_CHAT_WEBHOOK_URL" || echo "Failed to send notification"
         }
 
-        IMAGE_TAG="dev-latest"
+        APK_FILE=$(ls build/app/outputs/apk/release/android-app-qa-*.apk | head -1)
+        APK_FILENAME=$(basename "$APK_FILE")
+        NEXUS_REPO="${NEXUS_URL}/repository/android-apk-qa"
 
-        git clone --branch dev \
-          "https://${gituser}:${gitpass}@172.17.19.247/devops/bmd-manifests.git" \
-          || { send_notification "Deploy Failure" "Git clone failed 🛑"; exit 1; }
+        # Versioned copy রাখো
+        curl -u "$NEXUS_USER:$NEXUS_PASSWORD" \
+          --upload-file "$APK_FILE" \
+          "${NEXUS_REPO}/${APK_FILENAME}" \
+          || { send_notification "Deploy Failure" "Nexus versioned upload failed 🛑"; exit 1; }
 
-        cd bmd-manifests
+        # Latest overwrite করো
+        curl -u "$NEXUS_USER:$NEXUS_PASSWORD" \
+          --upload-file "$APK_FILE" \
+          "${NEXUS_REPO}/android-app-qa-latest.apk" \
+          || { send_notification "Deploy Failure" "Nexus latest update failed 🛑"; exit 1; }
 
-        sed -i "s|image: registry.cloudaes.com/android-app/android-app-web-preview:.*|image: registry.cloudaes.com/android-app/android-app-web-preview:${IMAGE_TAG}|" \
-          k8s/android-preview.yaml \
-          || { send_notification "Deploy Failure" "Manifest update failed 🙈"; exit 1; }
+        GITLAB_ARTIFACT_URL="${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/file/build/app/outputs/apk/release/${APK_FILENAME}"
 
-        git add k8s/android-preview.yaml
-        git commit -m "Update android web preview to ${IMAGE_TAG} [pipeline: ${CI_PIPELINE_IID}]" \
-          || { send_notification "Deploy Failure" "Git commit failed 🔁"; exit 1; }
+        echo "APK_NEXUS_URL=${NEXUS_REPO}/${APK_FILENAME}" >> /tmp/apk_info.env
+        echo "APK_NEXUS_LATEST_URL=${NEXUS_REPO}/android-app-qa-latest.apk" >> /tmp/apk_info.env
+        echo "APK_GITLAB_URL=${GITLAB_ARTIFACT_URL}" >> /tmp/apk_info.env
 
-        git push origin dev \
-          || { send_notification "Deploy Failure" "Git push failed 🔨"; exit 1; }
-
-        send_notification "Deploy Success" "Manifest updated, triggering ArgoCD 🎉"
+        send_notification "Upload Success" "APK uploaded! Notifying QA team 🎉"
       EOF
+  artifacts:
+    reports:
+      dotenv: /tmp/apk_info.env
   retry:
     max: 2
     when:
       - runner_system_failure
       - stuck_or_timeout_failure
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "dev"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "qa"'
       when: always
     - when: never
   tags:
-    - dev
-
-trigger_argo:
-  stage: trigger_argo
-  image: registry.cloudaes.com/base-images/argocli:v2.6.15
-  resource_group: android-dev
-  needs: ['update-manifest']
-  script:
-    - APP="android-preview-dev-ns"
-    - argocd login $dev_argo_url --username $argo_user --password $argo_pass --insecure
-    - argocd app sync $APP
-    - argocd app wait $APP
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "dev"'
-      when: on_success
-    - when: never
-  tags:
-    - dev
+    - qa
 
 notify-success:
   stage: notify
   image: registry.cloudaes.com/base-images/aes-git:v1.0.2
-  needs: ['trigger_argo']
+  needs: ['upload-nexus']
   script:
     - |
       /bin/bash <<'EOF'
-        PREVIEW_URL="https://android-preview.dev.yourcompany.com"
-
-        CHAT_TEXT="🔧 *Android Dev Preview Ready!*
+        CHAT_TEXT="🧪 *New Android Build Ready — QA Team*
 
         *Project:* ${CI_PROJECT_NAME}
         *Branch:* ${CI_COMMIT_REF_NAME}
-        *Pipeline:* #${CI_PIPELINE_IID}
+        *Build No:* #${CI_PIPELINE_IID}
+        *Version:* ${APK_TAG}
         *Commit:* \`${CI_COMMIT_SHORT_SHA}\`
         *Author:* ${GITLAB_USER_NAME}
         *Message:* ${CI_COMMIT_MESSAGE}
 
-        🌐 <${PREVIEW_URL}|Browser এ দেখুন>
+        📦 <${APK_NEXUS_URL}|এই Build Download করুন (Nexus)>
+        📦 <${APK_NEXUS_LATEST_URL}|সবসময় Latest APK (Nexus)>
+        📦 <${APK_GITLAB_URL}|এই Build Download করুন (GitLab)>
 
-        ✅ Analyze  ✅ Test  ✅ SonarQube  ✅ Build  ✅ Deployed"
+        ✅ Analyze  ✅ Test  ✅ SonarQube  ✅ Build  ✅ Uploaded"
 
         curl -s -X POST -H "Content-Type: application/json" \
           -d "$(node -e "console.log(JSON.stringify({text: process.argv[1]}))" "$CHAT_TEXT")" \
@@ -359,11 +358,11 @@ notify-success:
       EOF
   when: on_success
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "dev"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "qa"'
       when: on_success
     - when: never
   tags:
-    - dev
+    - qa
 
 notify-failure:
   stage: notify
@@ -371,7 +370,7 @@ notify-failure:
   script:
     - |
       /bin/bash <<'EOF'
-        CHAT_TEXT="❌ *Android Dev Build Failed!*
+        CHAT_TEXT="❌ *Android QA Build Failed!*
 
         *Project:* ${CI_PROJECT_NAME}
         *Branch:* ${CI_COMMIT_REF_NAME}
@@ -386,8 +385,8 @@ notify-failure:
       EOF
   when: on_failure
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "dev"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "qa"'
       when: on_failure
     - when: never
   tags:
-    - dev
+    - qa
