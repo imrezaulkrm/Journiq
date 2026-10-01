@@ -293,13 +293,14 @@ upload-nexus:
         NEXUS_REPO="${NEXUS_URL}/repository/android-apk-dev"
 
         # Versioned copy
-        curl -H "Authorization: Basic ${NEXUS_AUTH_TOKEN}" \
+        # Versioned copy
+        curl -k -H "Authorization: Basic ${NEXUS_AUTH_TOKEN}" \
           --upload-file "$APK_FILE" \
           "${NEXUS_REPO}/${APK_FILENAME}" \
           || { send_notification "Deploy Failure" "Nexus upload failed 🛑"; exit 1; }
 
         # Latest overwrite
-        curl -H "Authorization: Basic ${NEXUS_AUTH_TOKEN}" \
+        curl -k -H "Authorization: Basic ${NEXUS_AUTH_TOKEN}" \
           --upload-file "$APK_FILE" \
           "${NEXUS_REPO}/android-app-dev-latest.apk" \
           || { send_notification "Deploy Failure" "Nexus latest update failed 🛑"; exit 1; }
