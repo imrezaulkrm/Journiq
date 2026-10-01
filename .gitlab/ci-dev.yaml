@@ -4,7 +4,6 @@ stages:
   - sonar
   - build
   - deploy
-  - trigger_argo
   - notify
 
 # ════════════════════════════════════════════════════════════
@@ -95,7 +94,7 @@ sonarqube-report:
           git fetch origin "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-dev}" --unshallow || true
 
         sonar-scanner \
-          -Dsonar.host.url="$SONAR_URL" \
+          -Dsonar.host.url="$SONAR_HOST_URL" \
           -Dsonar.token="$SONAR_TOKEN" \
           -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
           -Dsonar.projectName="$SONAR_PROJECT_NAME" \
@@ -112,7 +111,7 @@ sonarqube-report:
         CE_STATUS="PENDING"
         for i in $(seq 1 40); do
           curl -s -u "${SONAR_TOKEN}:" \
-            "${SONAR_URL}/api/ce/task?id=${CE_TASK_ID}" \
+            "${SONAR_HOST_URL}/api/ce/task?id=${CE_TASK_ID}" \
             -o /tmp/ce_task.json || echo '{}' > /tmp/ce_task.json
           CE_STATUS=$(node -e "
             try {
@@ -133,7 +132,7 @@ sonarqube-report:
         ")
 
         curl -s -u "${SONAR_TOKEN}:" \
-          "${SONAR_URL}/api/qualitygates/project_status?analysisId=${ANALYSIS_ID}" \
+          "${SONAR_HOST_URL}/api/qualitygates/project_status?analysisId=${ANALYSIS_ID}" \
           -o /tmp/quality_gate.json || echo '{}' > /tmp/quality_gate.json
 
         STATUS=$(node -e "
@@ -145,7 +144,7 @@ sonarqube-report:
         STATUS=${STATUS:-UNKNOWN}
 
         curl -s -u "${SONAR_TOKEN}:" \
-          "${SONAR_URL}/api/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=coverage,new_coverage,bugs,vulnerabilities,code_smells,new_bugs,new_vulnerabilities,new_code_smells" \
+          "${SONAR_HOST_URL}/api/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=coverage,new_coverage,bugs,vulnerabilities,code_smells,new_bugs,new_vulnerabilities,new_code_smells" \
           -o /tmp/metrics.json || echo '{}' > /tmp/metrics.json
 
         node -e "
@@ -167,7 +166,6 @@ sonarqube-report:
 
         if [ "$STATUS" = "OK" ]; then EMOJI="✅"; else EMOJI="❌"; fi
 
-        # MR এ comment
         if [ -n "$CI_MERGE_REQUEST_IID" ]; then
           COMMENT="${EMOJI} **SonarQube Quality Gate: ${STATUS}**
         - Branch: ${CI_COMMIT_REF_NAME}
@@ -175,7 +173,7 @@ sonarqube-report:
         - Bugs: ${BUGS} (new: ${NEW_BUGS})
         - Vulnerabilities: ${VULNERABILITIES} (new: ${NEW_VULNERABILITIES})
         - Code Smells: ${CODE_SMELLS} (new: ${NEW_CODE_SMELLS})
-        [View SonarQube Dashboard](${SONAR_URL}/dashboard?id=${SONAR_PROJECT_KEY})
+        [View SonarQube Dashboard](${SONAR_HOST_URL}/dashboard?id=${SONAR_PROJECT_KEY})
         Triggered by: ${GITLAB_USER_NAME} (@${GITLAB_USER_LOGIN})"
 
           curl -s -o /dev/null --insecure \
@@ -185,7 +183,6 @@ sonarqube-report:
             "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}/notes"
         fi
 
-        # Google Chat notify
         CHAT_TEXT="${EMOJI} *SonarQube Quality Gate: ${STATUS}*
         *Project:* ${CI_PROJECT_NAME}
         *Branch:* ${CI_COMMIT_REF_NAME}
@@ -195,7 +192,7 @@ sonarqube-report:
         🔒 Vulnerabilities: ${VULNERABILITIES} (new: ${NEW_VULNERABILITIES})
         🔧 Code Smells: ${CODE_SMELLS} (new: ${NEW_CODE_SMELLS})
         👤 Triggered by: ${GITLAB_USER_NAME}
-        🔗 <${SONAR_URL}/dashboard?id=${SONAR_PROJECT_KEY}|SonarQube Dashboard>"
+        🔗 <${SONAR_HOST_URL}/dashboard?id=${SONAR_PROJECT_KEY}|SonarQube Dashboard>"
         curl -s -X POST -H "Content-Type: application/json" \
           -d "$(node -e "console.log(JSON.stringify({text: process.argv[1]}))" "$CHAT_TEXT")" \
           "$SONAR_GOOGLE_CHAT_WEBHOOK_URL" || echo "Chat notify failed"
@@ -214,14 +211,12 @@ sonarqube-report:
 
 # ════════════════════════════════════════════════════════════
 # DEV BRANCH এ PUSH হলে (merge পরে)
-# Flutter Web Build → Harbor → ArgoCD → Browser Preview URL
+# APK Build + Sign → GitLab Artifact → Google Chat
 # ════════════════════════════════════════════════════════════
 
-build-web-preview:
+build-apk:
   stage: build
-  image: registry.cloudaes.com/base-images/aes-docker:24.0.5-cli
-  services:
-    - docker:24.0.5-dind
+  image: ghcr.io/cirruslabs/flutter:stable
   resource_group: android-dev
   script:
     - |
@@ -234,25 +229,37 @@ build-web-preview:
           curl -s -X POST -H "Content-Type: application/json" -d "$payload" "$GOOGLE_CHAT_WEBHOOK_URL" || echo "Failed to send notification"
         }
 
-        IMAGE_NAME="registry.cloudaes.com/android-app/android-app-web-preview"
-        IMAGE_TAG="dev-latest"
+        MR_IID=$(git log -1 --pretty=%B | grep -oP 'See merge request .*!\K\d+' || echo "0")
+        APK_TAG="$(date +'%d%b')-mr${MR_IID}-b${CI_PIPELINE_IID}"
+        export APK_TAG
 
-        echo "$harborpass" | docker login registry.cloudaes.com -u "$harboruser" --password-stdin \
-          || { send_notification "Build Failure" "Docker login failed 😱"; exit 1; }
+        # Keystore inject
+        echo "$KEYSTORE_BASE64" | base64 -d > android/app/keystore.jks \
+          || { send_notification "Build Failure" "Keystore inject failed 🔑"; exit 1; }
 
-        docker build \
-          --build-arg BUILD_TARGET=web \
-          --build-arg DART_ENV=dev \
-          -t "$IMAGE_NAME:$IMAGE_TAG" . \
-          || { send_notification "Build Failure" "Web preview build failed 🔨"; exit 1; }
+        # Version set
+        sed -i "s/^version:.*/version: 1.0.0+${CI_PIPELINE_IID}/" pubspec.yaml
 
-        docker push "$IMAGE_NAME:$IMAGE_TAG" \
-          || { send_notification "Build Failure" "Harbor push failed 🛑"; exit 1; }
+        flutter pub get || { send_notification "Build Failure" "pub get failed 😱"; exit 1; }
 
-        docker rmi "$IMAGE_NAME:$IMAGE_TAG" || true
+        flutter build apk --release \
+          --dart-define=ENV=dev \
+          || { send_notification "Build Failure" "APK build failed 🔨"; exit 1; }
 
-        send_notification "Build Success" "Web preview image pushed, deploying... 🚀"
+        # Rename APK with version tag
+        mv build/app/outputs/apk/release/app-release.apk \
+           build/app/outputs/apk/release/android-app-dev-${APK_TAG}.apk
+
+        echo "APK_TAG=${APK_TAG}" > apk_info.env
+
+        send_notification "Build Success" "APK built successfully 📦"
       EOF
+  artifacts:
+    paths:
+      - build/app/outputs/apk/release/android-app-dev-*.apk
+    reports:
+      dotenv: apk_info.env
+    expire_in: 30 days
   retry:
     max: 2
     when:
@@ -265,11 +272,11 @@ build-web-preview:
   tags:
     - dev
 
-update-manifest:
+upload-nexus:
   stage: deploy
-  image: registry.cloudaes.com/base-images/aes-git:v1.0.2
+  image: ghcr.io/cirruslabs/flutter:stable
   resource_group: android-dev
-  needs: ['build-web-preview']
+  needs: ['build-apk']
   script:
     - |
       /bin/bash <<'EOF'
@@ -281,27 +288,33 @@ update-manifest:
           curl -s -X POST -H "Content-Type: application/json" -d "$payload" "$GOOGLE_CHAT_WEBHOOK_URL" || echo "Failed to send notification"
         }
 
-        IMAGE_TAG="dev-latest"
+        APK_FILE=$(ls build/app/outputs/apk/release/android-app-dev-*.apk | head -1)
+        APK_FILENAME=$(basename "$APK_FILE")
+        NEXUS_REPO="${NEXUS_URL}/repository/android-apk-dev"
 
-        git clone --branch dev \
-          "https://${gituser}:${gitpass}@172.17.19.247/devops/bmd-manifests.git" \
-          || { send_notification "Deploy Failure" "Git clone failed 🛑"; exit 1; }
+        # Versioned copy
+        curl -H "Authorization: Basic ${NEXUS_AUTH_TOKEN}" \
+          --upload-file "$APK_FILE" \
+          "${NEXUS_REPO}/${APK_FILENAME}" \
+          || { send_notification "Deploy Failure" "Nexus upload failed 🛑"; exit 1; }
 
-        cd bmd-manifests
+        # Latest overwrite
+        curl -H "Authorization: Basic ${NEXUS_AUTH_TOKEN}" \
+          --upload-file "$APK_FILE" \
+          "${NEXUS_REPO}/android-app-dev-latest.apk" \
+          || { send_notification "Deploy Failure" "Nexus latest update failed 🛑"; exit 1; }
 
-        sed -i "s|image: registry.cloudaes.com/android-app/android-app-web-preview:.*|image: registry.cloudaes.com/android-app/android-app-web-preview:${IMAGE_TAG}|" \
-          k8s/android-preview.yaml \
-          || { send_notification "Deploy Failure" "Manifest update failed 🙈"; exit 1; }
+        GITLAB_ARTIFACT_URL="${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/file/build/app/outputs/apk/release/${APK_FILENAME}"
 
-        git add k8s/android-preview.yaml
-        git commit -m "Update android web preview to ${IMAGE_TAG} [pipeline: ${CI_PIPELINE_IID}]" \
-          || { send_notification "Deploy Failure" "Git commit failed 🔁"; exit 1; }
+        echo "APK_NEXUS_URL=${NEXUS_REPO}/${APK_FILENAME}" >> apk_info.env
+        echo "APK_NEXUS_LATEST_URL=${NEXUS_REPO}/android-app-dev-latest.apk" >> apk_info.env
+        echo "APK_GITLAB_URL=${GITLAB_ARTIFACT_URL}" >> apk_info.env
 
-        git push origin dev \
-          || { send_notification "Deploy Failure" "Git push failed 🔨"; exit 1; }
-
-        send_notification "Deploy Success" "Manifest updated, triggering ArgoCD 🎉"
+        send_notification "Upload Success" "APK uploaded to Nexus 🎉"
       EOF
+  artifacts:
+    reports:
+      dotenv: apk_info.env
   retry:
     max: 2
     when:
@@ -310,48 +323,32 @@ update-manifest:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "dev"'
       when: always
-    - when: never
-  tags:
-    - dev
-
-trigger_argo:
-  stage: trigger_argo
-  image: registry.cloudaes.com/base-images/argocli:v2.6.15
-  resource_group: android-dev
-  needs: ['update-manifest']
-  script:
-    - APP="android-preview-dev-ns"
-    - argocd login $dev_argo_url --username $argo_user --password $argo_pass --insecure
-    - argocd app sync $APP
-    - argocd app wait $APP
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == "dev"'
-      when: on_success
     - when: never
   tags:
     - dev
 
 notify-success:
   stage: notify
-  image: registry.cloudaes.com/base-images/aes-git:v1.0.2
-  needs: ['trigger_argo']
+  image: ghcr.io/cirruslabs/flutter:stable
+  needs: ['upload-nexus']
   script:
     - |
       /bin/bash <<'EOF'
-        PREVIEW_URL="https://android-preview.dev.yourcompany.com"
-
-        CHAT_TEXT="🔧 *Android Dev Preview Ready!*
+        CHAT_TEXT="🔧 *New Android Build Ready — Dev Team*
 
         *Project:* ${CI_PROJECT_NAME}
         *Branch:* ${CI_COMMIT_REF_NAME}
-        *Pipeline:* #${CI_PIPELINE_IID}
+        *Build No:* #${CI_PIPELINE_IID}
+        *Version:* ${APK_TAG}
         *Commit:* \`${CI_COMMIT_SHORT_SHA}\`
         *Author:* ${GITLAB_USER_NAME}
         *Message:* ${CI_COMMIT_MESSAGE}
 
-        🌐 <${PREVIEW_URL}|Browser এ দেখুন>
+        📦 <${APK_NEXUS_URL}|এই Build (Nexus)>
+        📦 <${APK_NEXUS_LATEST_URL}|Latest APK (Nexus)>
+        📦 <${APK_GITLAB_URL}|এই Build (GitLab)>
 
-        ✅ Analyze  ✅ Test  ✅ SonarQube  ✅ Build  ✅ Deployed"
+        ✅ Analyze  ✅ Test  ✅ SonarQube  ✅ Build  ✅ Uploaded"
 
         curl -s -X POST -H "Content-Type: application/json" \
           -d "$(node -e "console.log(JSON.stringify({text: process.argv[1]}))" "$CHAT_TEXT")" \
@@ -367,7 +364,7 @@ notify-success:
 
 notify-failure:
   stage: notify
-  image: registry.cloudaes.com/base-images/aes-git:v1.0.2
+  image: ghcr.io/cirruslabs/flutter:stable
   script:
     - |
       /bin/bash <<'EOF'
