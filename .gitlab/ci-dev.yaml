@@ -21,7 +21,7 @@ flutter-analyze:
 
         flutter pub get || { send_notification "Analyze Failure" "pub get failed 😱"; exit 1; }
         flutter analyze || { send_notification "Analyze Failure" "Who broke the code? 🔍"; exit 1; }
-        dart format --check . || { send_notification "Analyze Failure" "Format check failed 🧹"; exit 1; }
+        dart format --output=none --set-exit-if-changed . || { send_notification "Analyze Failure" "Format check failed 🧹"; exit 1; }
 
         send_notification "Analyze Success" "Code analysis passed ✅"
       EOF
