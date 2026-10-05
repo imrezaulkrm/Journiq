@@ -5,7 +5,8 @@ import '../tables/journeys_table.dart';
 part 'journeys_dao.g.dart';
 
 @DriftAccessor(tables: [Journeys])
-class JourneysDao extends DatabaseAccessor<AppDatabase> with _$JourneysDaoMixin {
+class JourneysDao extends DatabaseAccessor<AppDatabase>
+    with _$JourneysDaoMixin {
   JourneysDao(super.db);
 
   Future<void> insertJourney(JourneysCompanion journey) =>
@@ -14,11 +15,13 @@ class JourneysDao extends DatabaseAccessor<AppDatabase> with _$JourneysDaoMixin 
   Future<int> updateJourney(String id, JourneysCompanion journey) =>
       (update(journeys)..where((t) => t.id.equals(id))).write(journey);
 
-  Future<List<Journey>> getAllJourneys() =>
-      (select(journeys)..orderBy([(t) => OrderingTerm.desc(t.startTime)])).get();
+  Future<List<Journey>> getAllJourneys() => (select(
+    journeys,
+  )..orderBy([(t) => OrderingTerm.desc(t.startTime)])).get();
 
-  Stream<List<Journey>> watchAllJourneys() =>
-      (select(journeys)..orderBy([(t) => OrderingTerm.desc(t.startTime)])).watch();
+  Stream<List<Journey>> watchAllJourneys() => (select(
+    journeys,
+  )..orderBy([(t) => OrderingTerm.desc(t.startTime)])).watch();
 
   Future<Journey?> getJourneyById(String id) =>
       (select(journeys)..where((t) => t.id.equals(id))).getSingleOrNull();
@@ -34,9 +37,11 @@ class JourneysDao extends DatabaseAccessor<AppDatabase> with _$JourneysDaoMixin 
         : DateTime(year + 1, 1, 1).subtract(const Duration(milliseconds: 1));
 
     return (select(journeys)
-          ..where((t) =>
-              t.startTime.isBiggerOrEqualValue(startOfMonth) &
-              t.startTime.isSmallerOrEqualValue(endOfMonth))
+          ..where(
+            (t) =>
+                t.startTime.isBiggerOrEqualValue(startOfMonth) &
+                t.startTime.isSmallerOrEqualValue(endOfMonth),
+          )
           ..orderBy([(t) => OrderingTerm.desc(t.startTime)]))
         .get();
   }
@@ -48,9 +53,11 @@ class JourneysDao extends DatabaseAccessor<AppDatabase> with _$JourneysDaoMixin 
         : DateTime(year + 1, 1, 1).subtract(const Duration(milliseconds: 1));
 
     return (select(journeys)
-          ..where((t) =>
-              t.startTime.isBiggerOrEqualValue(startOfMonth) &
-              t.startTime.isSmallerOrEqualValue(endOfMonth))
+          ..where(
+            (t) =>
+                t.startTime.isBiggerOrEqualValue(startOfMonth) &
+                t.startTime.isSmallerOrEqualValue(endOfMonth),
+          )
           ..orderBy([(t) => OrderingTerm.desc(t.startTime)]))
         .watch();
   }

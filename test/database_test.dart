@@ -14,7 +14,10 @@ void main() {
   late DriftJourneyRepository repository;
 
   setUpAll(() {
-    open.overrideFor(OperatingSystem.linux, () => DynamicLibrary.open('/usr/lib/x86_64-linux-gnu/libsqlite3.so.0'));
+    open.overrideFor(
+      OperatingSystem.linux,
+      () => DynamicLibrary.open('/usr/lib/x86_64-linux-gnu/libsqlite3.so.0'),
+    );
   });
 
   setUp(() {
@@ -71,49 +74,59 @@ void main() {
       expect(retrieved.distanceMeters, 850.0);
       expect(retrieved.weatherCondition, 'Clear sky');
 
-      final savedPoints = await repository.getPointsForJourney('test_journey_1');
+      final savedPoints = await repository.getPointsForJourney(
+        'test_journey_1',
+      );
       expect(savedPoints.length, 2);
       expect(savedPoints.first.latitude, 23.8103);
       expect(savedPoints.last.latitude, 23.8115);
     });
 
-    test('deleting journey cascade deletes points and active entries', () async {
-      final now = DateTime(2026, 9, 29, 10, 0, 0);
-      final points = <TrackingPoint>[
-        TrackingPoint(
-          latitude: 23.8103,
-          longitude: 90.4125,
-          timestamp: now,
-          speedKmh: 0.0,
-          accuracyMeters: 5.0,
-        ),
-      ];
+    test(
+      'deleting journey cascade deletes points and active entries',
+      () async {
+        final now = DateTime(2026, 9, 29, 10, 0, 0);
+        final points = <TrackingPoint>[
+          TrackingPoint(
+            latitude: 23.8103,
+            longitude: 90.4125,
+            timestamp: now,
+            speedKmh: 0.0,
+            accuracyMeters: 5.0,
+          ),
+        ];
 
-      await repository.saveCompleteJourney(
-        id: 'cascade_test_journey',
-        mode: JourneyMode.bicycle,
-        startTime: now,
-        endTime: now.add(const Duration(minutes: 5)),
-        activeDurationSeconds: 300,
-        distanceMeters: 1200.0,
-        averageSpeedKmh: 14.4,
-        maxSpeedKmh: 18.0,
-        points: points,
-      );
+        await repository.saveCompleteJourney(
+          id: 'cascade_test_journey',
+          mode: JourneyMode.bicycle,
+          startTime: now,
+          endTime: now.add(const Duration(minutes: 5)),
+          activeDurationSeconds: 300,
+          distanceMeters: 1200.0,
+          averageSpeedKmh: 14.4,
+          maxSpeedKmh: 18.0,
+          points: points,
+        );
 
-      expect((await repository.getPointsForJourney('cascade_test_journey')).length, 1);
+        expect(
+          (await repository.getPointsForJourney('cascade_test_journey')).length,
+          1,
+        );
 
-      // Delete the journey
-      await repository.deleteJourney('cascade_test_journey');
+        // Delete the journey
+        await repository.deleteJourney('cascade_test_journey');
 
-      // Verify journey is removed
-      final deleted = await repository.getJourney('cascade_test_journey');
-      expect(deleted, isNull);
+        // Verify journey is removed
+        final deleted = await repository.getJourney('cascade_test_journey');
+        expect(deleted, isNull);
 
-      // Verify points were cascade deleted
-      final pointsAfterDelete = await repository.getPointsForJourney('cascade_test_journey');
-      expect(pointsAfterDelete, isEmpty);
-    });
+        // Verify points were cascade deleted
+        final pointsAfterDelete = await repository.getPointsForJourney(
+          'cascade_test_journey',
+        );
+        expect(pointsAfterDelete, isEmpty);
+      },
+    );
 
     test('active journey recovery persistence and discard', () async {
       final now = DateTime(2026, 9, 29, 10, 0, 0);

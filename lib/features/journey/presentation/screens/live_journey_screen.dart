@@ -84,7 +84,9 @@ class _LiveJourneyScreenState extends ConsumerState<LiveJourneyScreen>
         ),
       );
 
-      final savedId = await ref.read(trackingProvider.notifier).stopAndSaveJourney();
+      final savedId = await ref
+          .read(trackingProvider.notifier)
+          .stopAndSaveJourney();
 
       if (mounted) {
         Navigator.of(context).pop(); // dismiss loading
@@ -113,9 +115,7 @@ class _LiveJourneyScreenState extends ConsumerState<LiveJourneyScreen>
           (prev?.currentPoint == null ||
               prev!.currentPoint!.latitude != next.currentPoint!.latitude ||
               prev.currentPoint!.longitude != next.currentPoint!.longitude)) {
-        _followingController.onLocationUpdate(
-          next.currentPoint!.toLatLng(),
-        );
+        _followingController.onLocationUpdate(next.currentPoint!.toLatLng());
 
         if (!_weatherFetched) {
           _fetchInitialWeather();
@@ -124,7 +124,8 @@ class _LiveJourneyScreenState extends ConsumerState<LiveJourneyScreen>
     });
 
     final currentPt = metrics.currentPoint;
-    final initialCenter = currentPt?.toLatLng() ?? const LatLng(23.8103, 90.4125);
+    final initialCenter =
+        currentPt?.toLatLng() ?? const LatLng(23.8103, 90.4125);
     final routePoints = metrics.routeCoordinates;
 
     return Scaffold(
@@ -178,9 +179,7 @@ class _LiveJourneyScreenState extends ConsumerState<LiveJourneyScreen>
               ),
               // Current Location Marker with heading
               MarkerLayer(
-                markers: [
-                  CurrentLocationMarker.buildMarker(currentPt),
-                ],
+                markers: [CurrentLocationMarker.buildMarker(currentPt)],
               ),
             ],
           ),
@@ -196,7 +195,10 @@ class _LiveJourneyScreenState extends ConsumerState<LiveJourneyScreen>
                   CircleAvatar(
                     backgroundColor: AppColors.darkSurfaceGlass,
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: Colors.white,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),

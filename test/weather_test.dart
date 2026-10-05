@@ -59,7 +59,7 @@ void main() {
         },
         'hourly': {
           'precipitation_probability': [15, 20, 30, 45, 60],
-        }
+        },
       });
 
       final mockClient = MockClient((request) async {
@@ -78,16 +78,19 @@ void main() {
       expect(snapshot.hourlyRainProbabilities, [15, 20, 30, 45, 60]);
     });
 
-    test('OpenMeteoWeatherService handles network failure gracefully without throwing', () async {
-      final failingClient = MockClient((request) async {
-        throw Exception('Network unreachable');
-      });
+    test(
+      'OpenMeteoWeatherService handles network failure gracefully without throwing',
+      () async {
+        final failingClient = MockClient((request) async {
+          throw Exception('Network unreachable');
+        });
 
-      final service = OpenMeteoWeatherService(failingClient);
-      final snapshot = await service.getWeather(23.8103, 90.4125);
+        final service = OpenMeteoWeatherService(failingClient);
+        final snapshot = await service.getWeather(23.8103, 90.4125);
 
-      // Must return null or cache safely, never crash tracking
-      expect(snapshot, isNull);
-    });
+        // Must return null or cache safely, never crash tracking
+        expect(snapshot, isNull);
+      },
+    );
   });
 }

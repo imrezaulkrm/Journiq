@@ -21,20 +21,17 @@ class GeolocatorLocationService implements ILocationService {
       Geolocator.isLocationServiceEnabled();
 
   @override
-  Future<LocationPermission> checkPermission() =>
-      Geolocator.checkPermission();
+  Future<LocationPermission> checkPermission() => Geolocator.checkPermission();
 
   @override
   Future<LocationPermission> requestPermission() =>
       Geolocator.requestPermission();
 
   @override
-  Future<bool> openLocationSettings() =>
-      Geolocator.openLocationSettings();
+  Future<bool> openLocationSettings() => Geolocator.openLocationSettings();
 
   @override
-  Future<bool> openAppSettings() =>
-      Geolocator.openAppSettings();
+  Future<bool> openAppSettings() => Geolocator.openAppSettings();
 
   @override
   Future<TrackingPoint> getCurrentPosition() async {
@@ -84,14 +81,15 @@ class GeolocatorLocationService implements ILocationService {
       );
     }
 
-    return Geolocator.getPositionStream(locationSettings: settings)
-        .map((pos) => TrackingPoint(
-              latitude: pos.latitude,
-              longitude: pos.longitude,
-              timestamp: pos.timestamp,
-              speedKmh: pos.speed >= 0 ? pos.speed * 3.6 : 0.0,
-              accuracyMeters: pos.accuracy,
-              heading: pos.heading >= 0 ? pos.heading : null,
-            ));
+    return Geolocator.getPositionStream(locationSettings: settings).map(
+      (pos) => TrackingPoint(
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+        timestamp: pos.timestamp,
+        speedKmh: pos.speed >= 0 ? pos.speed * 3.6 : 0.0,
+        accuracyMeters: pos.accuracy,
+        heading: pos.heading >= 0 ? pos.heading : null,
+      ),
+    );
   }
 }

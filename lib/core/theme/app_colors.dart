@@ -14,8 +14,12 @@ class AppColors {
   static const Color accentPurple = Color(0xFF7C4DFF); // Deep Indigo/Purple
   static const Color accentAmber = Color(0xFFFFB300); // Navigation Gold
   static const Color statusGreen = Color(0xFF00E676); // Active / Excellent GPS
-  static const Color statusOrange = Color(0xFFFF9100); // Moderate GPS / Rain warning
-  static const Color statusRed = Color(0xFFFF1744); // Danger / Paused / Weak GPS
+  static const Color statusOrange = Color(
+    0xFFFF9100,
+  ); // Moderate GPS / Rain warning
+  static const Color statusRed = Color(
+    0xFFFF1744,
+  ); // Danger / Paused / Weak GPS
 
   // Text Colors
   static const Color textPrimaryDark = Color(0xFFF0F6FC);

@@ -3,7 +3,8 @@ import 'journeys_table.dart';
 
 class JourneyPoints extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get journeyId => text().references(Journeys, #id, onDelete: KeyAction.cascade)();
+  TextColumn get journeyId =>
+      text().references(Journeys, #id, onDelete: KeyAction.cascade)();
   RealColumn get latitude => real()();
   RealColumn get longitude => real()();
   DateTimeColumn get timestamp => dateTime()();

@@ -12,10 +12,7 @@ import '../../domain/models/journey_mode.dart';
 class JourneySummaryScreen extends ConsumerWidget {
   final String journeyId;
 
-  const JourneySummaryScreen({
-    super.key,
-    required this.journeyId,
-  });
+  const JourneySummaryScreen({super.key, required this.journeyId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -62,7 +59,10 @@ class JourneySummaryScreen extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: AppColors.primaryNeon.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.primaryNeon, width: 2),
+                        border: Border.all(
+                          color: AppColors.primaryNeon,
+                          width: 2,
+                        ),
                       ),
                       child: const Icon(
                         Icons.emoji_events_rounded,
@@ -113,7 +113,11 @@ class JourneySummaryScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    Container(height: 44, width: 1, color: AppColors.darkBorder),
+                    Container(
+                      height: 44,
+                      width: 1,
+                      color: AppColors.darkBorder,
+                    ),
                     Column(
                       children: [
                         Text(
@@ -145,7 +149,11 @@ class JourneySummaryScreen extends ConsumerWidget {
                       'AVERAGE SPEED',
                       Formatters.formatSpeed(j.averageSpeedKmh),
                     ),
-                    Container(height: 36, width: 1, color: AppColors.darkBorder),
+                    Container(
+                      height: 36,
+                      width: 1,
+                      color: AppColors.darkBorder,
+                    ),
                     _statItem(
                       'MAXIMUM SPEED',
                       Formatters.formatSpeed(j.maxSpeedKmh),
@@ -160,7 +168,11 @@ class JourneySummaryScreen extends ConsumerWidget {
                 FuturisticCard(
                   child: Row(
                     children: [
-                      const Icon(Icons.wb_sunny_rounded, color: AppColors.accentAmber, size: 28),
+                      const Icon(
+                        Icons.wb_sunny_rounded,
+                        color: AppColors.accentAmber,
+                        size: 28,
+                      ),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(
@@ -191,10 +203,7 @@ class JourneySummaryScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Areas Covered',
-                      style: AppTypography.titleMedium,
-                    ),
+                    Text('Areas Covered', style: AppTypography.titleMedium),
                     const SizedBox(height: 10),
                     if (areas.isEmpty)
                       Text(

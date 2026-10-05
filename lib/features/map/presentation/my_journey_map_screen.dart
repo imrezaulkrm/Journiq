@@ -51,9 +51,7 @@ class _MyJourneyMapScreenState extends ConsumerState<MyJourneyMapScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
-      appBar: AppBar(
-        title: const Text('My Journey Map'),
-      ),
+      appBar: AppBar(title: const Text('My Journey Map')),
       body: mapDataAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primaryNeon),
@@ -145,7 +143,11 @@ class _MyJourneyMapScreenState extends ConsumerState<MyJourneyMapScreen> {
                           ),
                         ],
                       ),
-                      Container(height: 36, width: 1, color: AppColors.darkBorder),
+                      Container(
+                        height: 36,
+                        width: 1,
+                        color: AppColors.darkBorder,
+                      ),
                       Column(
                         children: [
                           Text(

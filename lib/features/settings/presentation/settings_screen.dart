@@ -45,9 +45,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
@@ -60,7 +58,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.palette_outlined, color: AppColors.primaryNeon, size: 22),
+                    Icon(
+                      Icons.palette_outlined,
+                      color: AppColors.primaryNeon,
+                      size: 22,
+                    ),
                     SizedBox(width: 12),
                     Text('Theme Mode'),
                   ],
@@ -70,9 +72,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   dropdownColor: AppColors.darkSurfaceElevated,
                   underline: const SizedBox.shrink(),
                   items: const [
-                    DropdownMenuItem(value: ThemeMode.dark, child: Text('Futuristic Dark')),
-                    DropdownMenuItem(value: ThemeMode.light, child: Text('Clean Light')),
-                    DropdownMenuItem(value: ThemeMode.system, child: Text('System Default')),
+                    DropdownMenuItem(
+                      value: ThemeMode.dark,
+                      child: Text('Futuristic Dark'),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.light,
+                      child: Text('Clean Light'),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.system,
+                      child: Text('System Default'),
+                    ),
                   ],
                   onChanged: (mode) {
                     if (mode != null) notifier.setThemeMode(mode);
@@ -94,14 +105,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.straighten_rounded, color: AppColors.primaryNeon, size: 22),
+                        Icon(
+                          Icons.straighten_rounded,
+                          color: AppColors.primaryNeon,
+                          size: 22,
+                        ),
                         SizedBox(width: 12),
                         Text('Distance'),
                       ],
                     ),
                     Text(
                       'Kilometres (km)',
-                      style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondaryDark),
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.textSecondaryDark,
+                      ),
                     ),
                   ],
                 ),
@@ -111,14 +128,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.speed_rounded, color: AppColors.primaryNeon, size: 22),
+                        Icon(
+                          Icons.speed_rounded,
+                          color: AppColors.primaryNeon,
+                          size: 22,
+                        ),
                         SizedBox(width: 12),
                         Text('Speed'),
                       ],
                     ),
                     Text(
                       'Kilometres per hour (km/h)',
-                      style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondaryDark),
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.textSecondaryDark,
+                      ),
                     ),
                   ],
                 ),
@@ -141,18 +164,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.download_for_offline_outlined, color: AppColors.primaryNeon, size: 22),
+                    Icon(
+                      Icons.download_for_offline_outlined,
+                      color: AppColors.primaryNeon,
+                      size: 22,
+                    ),
                     SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Offline District Maps'),
-                        Text('Download regional maps for offline navigation', style: TextStyle(fontSize: 11, color: AppColors.textSecondaryDark)),
+                        Text(
+                          'Download regional maps for offline navigation',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondaryDark,
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
-                const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondaryDark),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textSecondaryDark,
+                ),
               ],
             ),
           ),
@@ -168,10 +204,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('SQLite Drift Database', style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondaryDark)),
+                    Text(
+                      'SQLite Drift Database',
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.textSecondaryDark,
+                      ),
+                    ),
                     Text(
                       '${_dbSizeMb.toStringAsFixed(2)} MB',
-                      style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w700),
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
@@ -179,10 +222,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Offline Map Tiles', style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondaryDark)),
+                    Text(
+                      'Offline Map Tiles',
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.textSecondaryDark,
+                      ),
+                    ),
                     Text(
                       '${offlineState.totalStorageMb.toStringAsFixed(1)} MB',
-                      style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w700, color: AppColors.primaryNeon),
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryNeon,
+                      ),
                     ),
                   ],
                 ),
@@ -198,17 +249,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.shield_outlined, color: AppColors.statusGreen, size: 24),
+                const Icon(
+                  Icons.shield_outlined,
+                  color: AppColors.statusGreen,
+                  size: 24,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('100% Local-First', style: AppTypography.titleMedium),
+                      Text(
+                        '100% Local-First',
+                        style: AppTypography.titleMedium,
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         'Journiq stores all your journeys, GPS points, routes, and statistics locally on your device in a secure SQLite database. No accounts, no cloud servers, and no tracking telemetry.',
-                        style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondaryDark),
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.textSecondaryDark,
+                        ),
                       ),
                     ],
                   ),
@@ -224,12 +284,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 Text(
                   '${AppConstants.appName} v1.0.0',
-                  style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w700),
+                  style: AppTypography.titleMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   AppConstants.appTagline,
-                  style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondaryDark),
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.textSecondaryDark,
+                  ),
                 ),
               ],
             ),

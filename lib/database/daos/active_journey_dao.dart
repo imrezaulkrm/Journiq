@@ -5,7 +5,8 @@ import '../tables/active_journeys_table.dart';
 part 'active_journey_dao.g.dart';
 
 @DriftAccessor(tables: [ActiveJourneys])
-class ActiveJourneyDao extends DatabaseAccessor<AppDatabase> with _$ActiveJourneyDaoMixin {
+class ActiveJourneyDao extends DatabaseAccessor<AppDatabase>
+    with _$ActiveJourneyDaoMixin {
   ActiveJourneyDao(super.db);
 
   Future<ActiveJourney?> getActiveJourney() =>

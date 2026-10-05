@@ -15,7 +15,8 @@ class DistanceCalculator {
     final dLat = _degToRad(endLat - startLat);
     final dLon = _degToRad(endLng - startLng);
 
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
         math.cos(_degToRad(startLat)) *
             math.cos(_degToRad(endLat)) *
             math.sin(dLon / 2) *

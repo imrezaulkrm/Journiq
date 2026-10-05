@@ -14,20 +14,19 @@ class UpdateInfo {
   });
 
   factory UpdateInfo.fromJson(Map<String, dynamic> json) {
-    String value(String key) =>
-        (json[key] as String?)?.trim() ?? '';
+    String value(String key) => (json[key] as String?)?.trim() ?? '';
 
     final rawNotes = json['releaseNotes'];
 
     final notes = rawNotes is List
         ? rawNotes
-            .whereType<String>()
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
-            .toList()
+              .whereType<String>()
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList()
         : rawNotes is String
-            ? [rawNotes.trim()]
-            : <String>[];
+        ? [rawNotes.trim()]
+        : <String>[];
 
     return UpdateInfo(
       latestVersion: value('latestVersion'),
@@ -38,19 +37,12 @@ class UpdateInfo {
   }
 
   UpdateRequirement requirementFor(String installedVersion) {
-    if (VersionComparator.compare(
-          installedVersion,
-          minimumSupportedVersion,
-        ) <
+    if (VersionComparator.compare(installedVersion, minimumSupportedVersion) <
         0) {
       return UpdateRequirement.mandatory;
     }
 
-    if (VersionComparator.compare(
-          installedVersion,
-          latestVersion,
-        ) <
-        0) {
+    if (VersionComparator.compare(installedVersion, latestVersion) < 0) {
       return UpdateRequirement.optional;
     }
 
@@ -84,8 +76,7 @@ class VersionComparator {
     }
 
     return [
-      for (var i = 1; i <= 3; i++)
-        int.tryParse(match.group(i) ?? '') ?? 0,
+      for (var i = 1; i <= 3; i++) int.tryParse(match.group(i) ?? '') ?? 0,
     ];
   }
 }

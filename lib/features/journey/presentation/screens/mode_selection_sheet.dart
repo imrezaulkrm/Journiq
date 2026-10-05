@@ -13,7 +13,10 @@ class ModeSelectionSheet extends StatefulWidget {
     required this.onSelected,
   });
 
-  static Future<JourneyMode?> show(BuildContext context, {JourneyMode initialMode = JourneyMode.walking}) {
+  static Future<JourneyMode?> show(
+    BuildContext context, {
+    JourneyMode initialMode = JourneyMode.walking,
+  }) {
     return showModalBottomSheet<JourneyMode>(
       context: context,
       backgroundColor: AppColors.darkSurface,
@@ -63,7 +66,9 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
             const SizedBox(height: 16),
             Text(
               'Choose Transport Mode',
-              style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.w700),
+              style: AppTypography.titleLarge.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 6),
             Text(
@@ -117,7 +122,9 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                         Text(
                           mode.label,
                           style: AppTypography.labelSmall.copyWith(
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                             color: isSelected
                                 ? AppColors.primaryNeon
                                 : AppColors.textPrimaryDark,
@@ -143,7 +150,10 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
               icon: const Icon(Icons.navigation_rounded),
               label: Text(
                 'Start Tracking ${_selected.label}',
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
               ),
             ),
           ],

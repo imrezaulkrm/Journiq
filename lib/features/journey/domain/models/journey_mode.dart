@@ -1,14 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum JourneyMode {
-  walking,
-  bicycle,
-  motorcycle,
-  car,
-  bus,
-  train,
-  other,
-}
+enum JourneyMode { walking, bicycle, motorcycle, car, bus, train, other }
 
 extension JourneyModeX on JourneyMode {
   String get label {

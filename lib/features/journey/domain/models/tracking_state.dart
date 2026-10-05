@@ -13,5 +13,6 @@ enum TrackingStatus {
 extension TrackingStatusX on TrackingStatus {
   bool get isActivelyTracking => this == TrackingStatus.tracking;
   bool get isPaused => this == TrackingStatus.paused;
-  bool get isRecording => this == TrackingStatus.tracking || this == TrackingStatus.paused;
+  bool get isRecording =>
+      this == TrackingStatus.tracking || this == TrackingStatus.paused;
 }

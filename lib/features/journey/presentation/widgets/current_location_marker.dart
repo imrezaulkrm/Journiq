@@ -80,9 +80,12 @@ class CurrentLocationMarker {
 
   static String formatAccuracyStatus(double accuracyMeters) {
     if (accuracyMeters <= 0) return 'GPS searching';
-    if (accuracyMeters <= 8) return '±${accuracyMeters.toStringAsFixed(0)} m • Excellent';
-    if (accuracyMeters <= 15) return '±${accuracyMeters.toStringAsFixed(0)} m • Good';
-    if (accuracyMeters <= 25) return '±${accuracyMeters.toStringAsFixed(0)} m • Fair';
+    if (accuracyMeters <= 8)
+      return '±${accuracyMeters.toStringAsFixed(0)} m • Excellent';
+    if (accuracyMeters <= 15)
+      return '±${accuracyMeters.toStringAsFixed(0)} m • Good';
+    if (accuracyMeters <= 25)
+      return '±${accuracyMeters.toStringAsFixed(0)} m • Fair';
     return '±${accuracyMeters.toStringAsFixed(0)} m • Weak';
   }
 }

@@ -12,12 +12,13 @@ class NominatimGeocodingService implements IGeocodingService {
   DateTime _lastRequestTime = DateTime.fromMillisecondsSinceEpoch(0);
 
   NominatimGeocodingService([http.Client? client])
-      : _client = client ?? http.Client();
+    : _client = client ?? http.Client();
 
   @override
   Future<String?> reverseGeocode(double latitude, double longitude) async {
     // 2-decimal rounded key gives ~1.1 km spatial grid cache
-    final cacheKey = '${latitude.toStringAsFixed(2)},${longitude.toStringAsFixed(2)}';
+    final cacheKey =
+        '${latitude.toStringAsFixed(2)},${longitude.toStringAsFixed(2)}';
     if (_memoryCache.containsKey(cacheKey)) {
       return _memoryCache[cacheKey];
     }
@@ -36,10 +37,9 @@ class NominatimGeocodingService implements IGeocodingService {
         'lat=$latitude&lon=$longitude&format=json&addressdetails=1',
       );
 
-      final response = await _client.get(
-        uri,
-        headers: {'User-Agent': AppConstants.userAgent},
-      ).timeout(const Duration(seconds: 6));
+      final response = await _client
+          .get(uri, headers: {'User-Agent': AppConstants.userAgent})
+          .timeout(const Duration(seconds: 6));
 
       if (response.statusCode != 200) return null;
 
@@ -48,7 +48,8 @@ class NominatimGeocodingService implements IGeocodingService {
       if (address == null) return null;
 
       // Extract meaningful area (neighborhood, suburb, town, city, district)
-      final area = address['suburb'] ??
+      final area =
+          address['suburb'] ??
           address['neighbourhood'] ??
           address['quarter'] ??
           address['residential'] ??

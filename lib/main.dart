@@ -21,11 +21,7 @@ void main() async {
     ),
   );
 
-  runApp(
-    const ProviderScope(
-      child: JourniqApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: JourniqApp()));
 }
 
 class JourniqApp extends ConsumerWidget {
@@ -68,19 +64,29 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
   DateTime? _lastCheck;
 
   @override
-  void initState() { super.initState(); WidgetsBinding.instance.addObserver(this); _check(); }
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _check();
+  }
+
   @override
-  void dispose() { WidgetsBinding.instance.removeObserver(this); super.dispose(); }
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && (_lastCheck == null || DateTime.now().difference(_lastCheck!) > const Duration(hours: 6))) _check();
+    if (state == AppLifecycleState.resumed &&
+        (_lastCheck == null ||
+            DateTime.now().difference(_lastCheck!) > const Duration(hours: 6)))
+      _check();
   }
 
   Future<void> _check() async {
     debugPrint('[Journiq UpdateGate] _check() started');
-    debugPrint(
-      '[Journiq UpdateGate] service URI=${_service.configurationUri}',
-    );
+    debugPrint('[Journiq UpdateGate] service URI=${_service.configurationUri}');
     debugPrint(
       '[Journiq UpdateGate] current version=${_service.currentVersion}',
     );
@@ -90,9 +96,7 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
     try {
       final info = await _service.check(force: true);
 
-      debugPrint(
-        '[Journiq UpdateGate] check completed: $info',
-      );
+      debugPrint('[Journiq UpdateGate] check completed: $info');
 
       if (!mounted) return;
 
@@ -102,9 +106,7 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
       });
 
       if (info != null) {
-        debugPrint(
-          '[Journiq UpdateGate] latest=${info.latestVersion}',
-        );
+        debugPrint('[Journiq UpdateGate] latest=${info.latestVersion}');
 
         debugPrint(
           '[Journiq UpdateGate] minimum=${info.minimumSupportedVersion}',
@@ -129,29 +131,50 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    if (_checking && _service.configurationUri != null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    final requirement = _info?.requirementFor(_service.currentVersion) ?? UpdateRequirement.none;
-    if (requirement == UpdateRequirement.mandatory) return _UpdateRequired(info: _info!);
+    if (_checking && _service.configurationUri != null)
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final requirement =
+        _info?.requirementFor(_service.currentVersion) ??
+        UpdateRequirement.none;
+    if (requirement == UpdateRequirement.mandatory)
+      return _UpdateRequired(info: _info!);
     if (requirement == UpdateRequirement.optional && !_optionalShown) {
       _optionalShown = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _showOptional(context, _info!));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _showOptional(context, _info!),
+      );
     }
     return widget.child;
   }
 
   void _showOptional(BuildContext context, UpdateInfo info) {
     if (!mounted) return;
-    showDialog<void>(context: context, builder: (_) => AlertDialog(
-      title: const Text('New update available'),
-      content: Text(
-        'Version ${info.latestVersion}\n\n'
-        '${info.releaseNotes.map((e) => '• $e').join('\n')}',
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('New update available'),
+        content: Text(
+          'Version ${info.latestVersion}\n\n'
+          '${info.releaseNotes.map((e) => '• $e').join('\n')}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Later'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              launchUrl(
+                Uri.parse(info.updateUrl),
+                mode: LaunchMode.externalApplication,
+              );
+            },
+            child: const Text('Update'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Later')),
-        FilledButton(onPressed: () { Navigator.pop(context); launchUrl(Uri.parse(info.updateUrl), mode: LaunchMode.externalApplication); }, child: const Text('Update')),
-      ],
-    ));
+    );
   }
 }
 
@@ -160,14 +183,34 @@ class _UpdateRequired extends StatelessWidget {
   const _UpdateRequired({required this.info});
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: Center(child: Padding(padding: const EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Icon(Icons.system_update_rounded, size: 56),
-      const SizedBox(height: 18),
-      const Text('Update Required', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-      const SizedBox(height: 12),
-      const Text('This version of Journiq is no longer supported.\nPlease update to continue.', textAlign: TextAlign.center),
-      const SizedBox(height: 24),
-      FilledButton(onPressed: () => launchUrl(Uri.parse(info.updateUrl), mode: LaunchMode.externalApplication), child: const Text('Update Now')),
-    ]))),
+    body: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.system_update_rounded, size: 56),
+            const SizedBox(height: 18),
+            const Text(
+              'Update Required',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'This version of Journiq is no longer supported.\nPlease update to continue.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: () => launchUrl(
+                Uri.parse(info.updateUrl),
+                mode: LaunchMode.externalApplication,
+              ),
+              child: const Text('Update Now'),
+            ),
+          ],
+        ),
+      ),
+    ),
   );
 }

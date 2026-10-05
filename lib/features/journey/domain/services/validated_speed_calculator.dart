@@ -26,8 +26,13 @@ class ValidatedSpeedCalculator {
     if (_ema < 0.2) _ema = 0.0;
   }
 
-  double calculate({required TrackingPoint previous, required TrackingPoint current}) {
-    final seconds = current.timestamp.difference(previous.timestamp).inMilliseconds / 1000.0;
+  double calculate({
+    required TrackingPoint previous,
+    required TrackingPoint current,
+  }) {
+    final seconds =
+        current.timestamp.difference(previous.timestamp).inMilliseconds /
+        1000.0;
     if (seconds <= 0) return _ema;
 
     final meters = DistanceCalculator.haversineDistanceMeters(
@@ -38,8 +43,12 @@ class ValidatedSpeedCalculator {
     );
 
     final raw = (meters / seconds) * 3.6;
-    final stationary = meters < AppConstants.minMovementMeters && raw < AppConstants.maxAllowedDwellSpeedKmh;
-    final bounded = stationary ? 0.0 : raw.clamp(0.0, mode.maxPlausibleSpeedKmh).toDouble();
+    final stationary =
+        meters < AppConstants.minMovementMeters &&
+        raw < AppConstants.maxAllowedDwellSpeedKmh;
+    final bounded = stationary
+        ? 0.0
+        : raw.clamp(0.0, mode.maxPlausibleSpeedKmh).toDouble();
 
     _recent.add(bounded);
     if (_recent.length > AppConstants.speedSmoothingWindow) {
@@ -49,7 +58,10 @@ class ValidatedSpeedCalculator {
     final sorted = List<double>.of(_recent)..sort();
     final median = sorted[sorted.length ~/ 2];
 
-    _ema = _ema == 0 ? median : (_ema * (1 - AppConstants.speedEmaAlpha)) + (median * AppConstants.speedEmaAlpha);
+    _ema = _ema == 0
+        ? median
+        : (_ema * (1 - AppConstants.speedEmaAlpha)) +
+              (median * AppConstants.speedEmaAlpha);
 
     if (stationary) {
       _ema *= 0.35;

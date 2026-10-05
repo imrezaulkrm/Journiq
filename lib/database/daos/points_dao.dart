@@ -8,7 +8,9 @@ part 'points_dao.g.dart';
 class PointsDao extends DatabaseAccessor<AppDatabase> with _$PointsDaoMixin {
   PointsDao(super.db);
 
-  Future<void> insertPointsBatch(List<JourneyPointsCompanion> pointsList) async {
+  Future<void> insertPointsBatch(
+    List<JourneyPointsCompanion> pointsList,
+  ) async {
     await batch((batch) {
       batch.insertAll(journeyPoints, pointsList);
     });

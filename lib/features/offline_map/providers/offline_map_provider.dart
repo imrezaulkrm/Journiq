@@ -41,9 +41,9 @@ class OfflineMapState {
 
 final offlineMapControllerProvider =
     StateNotifierProvider<OfflineMapController, OfflineMapState>((ref) {
-  final storage = ref.watch(offlineStorageProvider);
-  return OfflineMapController(storage);
-});
+      final storage = ref.watch(offlineStorageProvider);
+      return OfflineMapController(storage);
+    });
 
 class OfflineMapController extends StateNotifier<OfflineMapState> {
   final OfflineTileStorage _storage;
@@ -51,16 +51,15 @@ class OfflineMapController extends StateNotifier<OfflineMapState> {
   StreamSubscription<DistrictMapStatus>? _downloadSub;
 
   OfflineMapController(this._storage)
-      : super(OfflineMapState(
+    : super(
+        OfflineMapState(
           districtStatuses: {
             for (final d in DistrictData.districts)
-              d.id: DistrictMapStatus(
-                districtId: d.id,
-                districtName: d.name,
-              )
+              d.id: DistrictMapStatus(districtId: d.id, districtName: d.name),
           },
           totalStorageMb: 0.0,
-        )) {
+        ),
+      ) {
     refreshStorage();
   }
 
@@ -75,32 +74,37 @@ class OfflineMapController extends StateNotifier<OfflineMapState> {
     _activeDownloader = TileDownloader(_storage);
     state = state.copyWith(activeDownloadingDistrictId: district.id);
 
-    _downloadSub = _activeDownloader!.downloadDistrict(district).listen(
-      (status) {
-        final updatedMap = Map<String, DistrictMapStatus>.of(state.districtStatuses);
-        updatedMap[district.id] = status;
+    _downloadSub = _activeDownloader!
+        .downloadDistrict(district)
+        .listen(
+          (status) {
+            final updatedMap = Map<String, DistrictMapStatus>.of(
+              state.districtStatuses,
+            );
+            updatedMap[district.id] = status;
 
-        state = state.copyWith(
-          districtStatuses: updatedMap,
-          activeDownloadingDistrictId: status.status == DownloadStatus.downloading ||
-                  status.status == DownloadStatus.paused
-              ? district.id
-              : null,
+            state = state.copyWith(
+              districtStatuses: updatedMap,
+              activeDownloadingDistrictId:
+                  status.status == DownloadStatus.downloading ||
+                      status.status == DownloadStatus.paused
+                  ? district.id
+                  : null,
+            );
+
+            if (status.status == DownloadStatus.completed) {
+              refreshStorage();
+            }
+          },
+          onError: (err) {
+            state = state.copyWith(activeDownloadingDistrictId: null);
+          },
+          onDone: () {
+            if (state.activeDownloadingDistrictId == district.id) {
+              state = state.copyWith(activeDownloadingDistrictId: null);
+            }
+          },
         );
-
-        if (status.status == DownloadStatus.completed) {
-          refreshStorage();
-        }
-      },
-      onError: (err) {
-        state = state.copyWith(activeDownloadingDistrictId: null);
-      },
-      onDone: () {
-        if (state.activeDownloadingDistrictId == district.id) {
-          state = state.copyWith(activeDownloadingDistrictId: null);
-        }
-      },
-    );
   }
 
   void cancelDownload(String districtId) {

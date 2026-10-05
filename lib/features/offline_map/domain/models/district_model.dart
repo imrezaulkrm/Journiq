@@ -1,10 +1,4 @@
-enum DownloadStatus {
-  idle,
-  downloading,
-  paused,
-  completed,
-  error,
-}
+enum DownloadStatus { idle, downloading, paused, completed, error }
 
 class DistrictMapStatus {
   final String districtId;

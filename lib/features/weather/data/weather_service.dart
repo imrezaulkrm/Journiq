@@ -16,7 +16,7 @@ class OpenMeteoWeatherService implements IWeatherService {
   DateTime? _cachedTime;
 
   OpenMeteoWeatherService([http.Client? client])
-      : _client = client ?? http.Client();
+    : _client = client ?? http.Client();
 
   @override
   Future<WeatherSnapshot?> getWeather(double latitude, double longitude) async {
@@ -41,7 +41,9 @@ class OpenMeteoWeatherService implements IWeatherService {
         'hourly=precipitation_probability,weather_code&forecast_hours=6',
       );
 
-      final response = await _client.get(uri).timeout(const Duration(seconds: 8));
+      final response = await _client
+          .get(uri)
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode != 200) {
         return _cachedSnapshot;
@@ -65,7 +67,9 @@ class OpenMeteoWeatherService implements IWeatherService {
             .toList(growable: false);
       }
 
-      final currentRainProb = rainProbabilities.isNotEmpty ? rainProbabilities.first : 0;
+      final currentRainProb = rainProbabilities.isNotEmpty
+          ? rainProbabilities.first
+          : 0;
 
       final snapshot = WeatherSnapshot(
         temperature: temp,

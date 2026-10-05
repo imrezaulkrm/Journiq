@@ -36,7 +36,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     if (_recoveryChecked) return;
     _recoveryChecked = true;
 
-    final active = await ref.read(trackingProvider.notifier).checkActiveRecovery();
+    final active = await ref
+        .read(trackingProvider.notifier)
+        .checkActiveRecovery();
     if (active != null && mounted) {
       final mode = JourneyModeX.fromIndex(active.mode);
 
@@ -79,9 +81,14 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             TextButton(
               onPressed: () async {
                 Navigator.of(ctx).pop();
-                await ref.read(trackingProvider.notifier).discardActiveJourney(active.id);
+                await ref
+                    .read(trackingProvider.notifier)
+                    .discardActiveJourney(active.id);
               },
-              child: const Text('Discard', style: TextStyle(color: AppColors.statusRed)),
+              child: const Text(
+                'Discard',
+                style: TextStyle(color: AppColors.statusRed),
+              ),
             ),
             FilledButton.tonal(
               onPressed: () async {
@@ -114,9 +121,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       // Journey Tab: If tracking is active, navigate to live map, else show mode selector
       final tracking = ref.read(trackingProvider);
       if (tracking.status.isRecording) {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const LiveJourneyScreen()),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const LiveJourneyScreen()));
       } else {
         _launchModePicker();
       }
@@ -128,11 +135,13 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   Future<void> _launchModePicker() async {
     final mode = await ModeSelectionSheet.show(context);
     if (mode != null && mounted) {
-      final started = await ref.read(trackingProvider.notifier).startJourney(mode);
+      final started = await ref
+          .read(trackingProvider.notifier)
+          .startJourney(mode);
       if (started && mounted) {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const LiveJourneyScreen()),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const LiveJourneyScreen()));
       }
     }
   }
@@ -156,18 +165,18 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           _currentIndex == 0
               ? 'Journiq'
               : _currentIndex == 2
-                  ? 'My Journey Map'
-                  : _currentIndex == 3
-                      ? 'Statistics'
-                      : 'History',
+              ? 'My Journey Map'
+              : _currentIndex == 3
+              ? 'Statistics'
+              : 'History',
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
             },
           ),
         ],

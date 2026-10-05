@@ -22,9 +22,7 @@ class HistoryScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
-      appBar: AppBar(
-        title: const Text('Journey History'),
-      ),
+      appBar: AppBar(title: const Text('Journey History')),
       body: journeysAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primaryNeon),
@@ -70,7 +68,9 @@ class HistoryScreen extends ConsumerWidget {
               } catch (_) {}
 
               final areaSummary = areas.isNotEmpty
-                  ? (areas.length > 2 ? '${areas.first} → ${areas.last}' : areas.join(' • '))
+                  ? (areas.length > 2
+                        ? '${areas.first} → ${areas.last}'
+                        : areas.join(' • '))
                   : null;
 
               return FuturisticCard(
@@ -86,7 +86,11 @@ class HistoryScreen extends ConsumerWidget {
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: AppColors.darkSurfaceElevated,
-                      child: Icon(mode.icon, color: AppColors.primaryNeon, size: 24),
+                      child: Icon(
+                        mode.icon,
+                        color: AppColors.primaryNeon,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(

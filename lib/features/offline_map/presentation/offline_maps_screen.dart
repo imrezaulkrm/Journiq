@@ -19,9 +19,7 @@ class OfflineMapsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
-      appBar: AppBar(
-        title: const Text('Offline Maps'),
-      ),
+      appBar: AppBar(title: const Text('Offline Maps')),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
@@ -41,7 +39,9 @@ class OfflineMapsScreen extends ConsumerWidget {
                     title: const Text('Automatic Mode'),
                     subtitle: Text(
                       'Prefers downloaded offline maps and falls back to online data.',
-                      style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondaryDark),
+                      style: AppTypography.labelSmall.copyWith(
+                        color: AppColors.textSecondaryDark,
+                      ),
                     ),
                     value: MapMode.automatic,
                     activeColor: AppColors.primaryNeon,
@@ -50,7 +50,9 @@ class OfflineMapsScreen extends ConsumerWidget {
                     title: const Text('Offline Only Mode'),
                     subtitle: Text(
                       'Only renders cached and downloaded local district tiles.',
-                      style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondaryDark),
+                      style: AppTypography.labelSmall.copyWith(
+                        color: AppColors.textSecondaryDark,
+                      ),
                     ),
                     value: MapMode.offlineOnly,
                     activeColor: AppColors.primaryNeon,
@@ -59,7 +61,9 @@ class OfflineMapsScreen extends ConsumerWidget {
                     title: const Text('Online Only Mode'),
                     subtitle: Text(
                       'Always stream freshest online tiles from OpenStreetMap.',
-                      style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondaryDark),
+                      style: AppTypography.labelSmall.copyWith(
+                        color: AppColors.textSecondaryDark,
+                      ),
                     ),
                     value: MapMode.onlineOnly,
                     activeColor: AppColors.primaryNeon,
@@ -88,7 +92,8 @@ class OfflineMapsScreen extends ConsumerWidget {
 
           // District List
           ...DistrictData.districts.map((district) {
-            final status = offlineState.districtStatuses[district.id] ??
+            final status =
+                offlineState.districtStatuses[district.id] ??
                 DistrictMapStatus(
                   districtId: district.id,
                   districtName: district.name,
@@ -121,10 +126,15 @@ class OfflineMapsScreen extends ConsumerWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(district.name, style: AppTypography.titleMedium),
+                                Text(
+                                  district.name,
+                                  style: AppTypography.titleMedium,
+                                ),
                                 Text(
                                   'Coverage zoom: ${district.minZoom}–${district.maxZoom}',
-                                  style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondaryDark),
+                                  style: AppTypography.labelSmall.copyWith(
+                                    color: AppColors.textSecondaryDark,
+                                  ),
                                 ),
                               ],
                             ),
@@ -136,16 +146,23 @@ class OfflineMapsScreen extends ConsumerWidget {
                             style: FilledButton.styleFrom(
                               backgroundColor: AppColors.darkSurfaceElevated,
                               foregroundColor: AppColors.primaryNeon,
-                              side: const BorderSide(color: AppColors.primaryNeon),
+                              side: const BorderSide(
+                                color: AppColors.primaryNeon,
+                              ),
                             ),
                             icon: const Icon(Icons.download_rounded, size: 16),
                             label: const Text('Download'),
                           )
                         else if (isCompleted)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: AppColors.statusGreen.withValues(alpha: 0.15),
+                              color: AppColors.statusGreen.withValues(
+                                alpha: 0.15,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: AppColors.statusGreen),
                             ),
@@ -173,11 +190,17 @@ class OfflineMapsScreen extends ConsumerWidget {
                         children: [
                           Text(
                             'Downloaded: ${status.downloadedTiles} / ${status.totalTiles} tiles (${(status.progress * 100).toStringAsFixed(0)}%)',
-                            style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondaryDark),
+                            style: AppTypography.labelSmall.copyWith(
+                              color: AppColors.textSecondaryDark,
+                            ),
                           ),
                           TextButton(
-                            onPressed: () => controller.cancelDownload(district.id),
-                            child: const Text('Cancel', style: TextStyle(color: AppColors.statusRed)),
+                            onPressed: () =>
+                                controller.cancelDownload(district.id),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(color: AppColors.statusRed),
+                            ),
                           ),
                         ],
                       ),
@@ -198,12 +221,19 @@ class OfflineMapsScreen extends ConsumerWidget {
                   builder: (ctx) => AlertDialog(
                     backgroundColor: AppColors.darkSurface,
                     title: const Text('Clear Offline Map Storage?'),
-                    content: const Text('This will delete all locally cached and downloaded map tiles.'),
+                    content: const Text(
+                      'This will delete all locally cached and downloaded map tiles.',
+                    ),
                     actions: [
-                      TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('Cancel'),
+                      ),
                       FilledButton(
                         onPressed: () => Navigator.of(ctx).pop(true),
-                        style: FilledButton.styleFrom(backgroundColor: AppColors.statusRed),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.statusRed,
+                        ),
                         child: const Text('Clear Storage'),
                       ),
                     ],
@@ -214,10 +244,16 @@ class OfflineMapsScreen extends ConsumerWidget {
                   await controller.clearAllStorage();
                 }
               },
-              icon: const Icon(Icons.delete_sweep_rounded, color: AppColors.textSecondaryDark, size: 18),
+              icon: const Icon(
+                Icons.delete_sweep_rounded,
+                color: AppColors.textSecondaryDark,
+                size: 18,
+              ),
               label: Text(
                 'Clear Downloaded Map Cache',
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondaryDark),
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textSecondaryDark,
+                ),
               ),
             ),
           ),

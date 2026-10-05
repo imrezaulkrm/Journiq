@@ -7,10 +7,7 @@ import '../domain/models/weather_snapshot.dart';
 class FloatingWeatherCard extends StatefulWidget {
   final WeatherSnapshot? weather;
 
-  const FloatingWeatherCard({
-    super.key,
-    required this.weather,
-  });
+  const FloatingWeatherCard({super.key, required this.weather});
 
   @override
   State<FloatingWeatherCard> createState() => _FloatingWeatherCardState();
@@ -30,7 +27,11 @@ class _FloatingWeatherCardState extends State<FloatingWeatherCard> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off_rounded, size: 16, color: AppColors.statusOrange),
+            const Icon(
+              Icons.cloud_off_rounded,
+              size: 16,
+              color: AppColors.statusOrange,
+            ),
             const SizedBox(width: 8),
             Text(
               'Weather unavailable • Tracking unaffected',
@@ -45,7 +46,7 @@ class _FloatingWeatherCardState extends State<FloatingWeatherCard> {
 
     return FuturisticCard(
       enableGlass: true,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       onTap: () => setState(() => _expanded = !_expanded),
       child: AnimatedSize(
         duration: const Duration(milliseconds: 250),

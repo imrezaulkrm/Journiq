@@ -24,10 +24,7 @@ import '../../weather/presentation/floating_weather_card.dart';
 class HomeScreen extends ConsumerStatefulWidget {
   final VoidCallback onNavigateToHistory;
 
-  const HomeScreen({
-    super.key,
-    required this.onNavigateToHistory,
-  });
+  const HomeScreen({super.key, required this.onNavigateToHistory});
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -58,11 +55,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _startTracking(JourneyMode mode) async {
-    final started = await ref.read(trackingProvider.notifier).startJourney(mode);
+    final started = await ref
+        .read(trackingProvider.notifier)
+        .startJourney(mode);
     if (started && mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const LiveJourneyScreen()),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const LiveJourneyScreen()));
     }
   }
 
@@ -75,7 +74,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final storage = ref.watch(offlineStorageProvider);
     final now = DateTime.now();
 
-    final centerCoord = _currentLocation?.toLatLng() ?? const LatLng(23.8103, 90.4125);
+    final centerCoord =
+        _currentLocation?.toLatLng() ?? const LatLng(23.8103, 90.4125);
 
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
@@ -108,7 +108,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.darkSurfaceElevated,
                     borderRadius: BorderRadius.circular(12),
@@ -133,12 +136,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 borderColor: AppColors.primaryNeon,
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const LiveJourneyScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const LiveJourneyScreen(),
+                    ),
                   );
                 },
                 child: Row(
                   children: [
-                    const Icon(Icons.navigation_rounded, color: AppColors.primaryNeon, size: 28),
+                    const Icon(
+                      Icons.navigation_rounded,
+                      color: AppColors.primaryNeon,
+                      size: 28,
+                    ),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
@@ -160,7 +169,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.primaryNeon, size: 16),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: AppColors.primaryNeon,
+                      size: 16,
+                    ),
                   ],
                 ),
               ),
@@ -191,7 +204,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             children: [
                               TileLayer(
                                 urlTemplate: AppConstants.osmTileUrl,
-                                userAgentPackageName: AppConstants.appPackageName,
+                                userAgentPackageName:
+                                    AppConstants.appPackageName,
                                 tileProvider: JourniqTileProvider(
                                   storage: storage,
                                   mode: mapMode,
@@ -199,11 +213,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                               ),
                               CircleLayer(
-                                circles: CurrentLocationMarker.buildAccuracyCircle(_currentLocation),
+                                circles:
+                                    CurrentLocationMarker.buildAccuracyCircle(
+                                      _currentLocation,
+                                    ),
                               ),
                               MarkerLayer(
                                 markers: [
-                                  CurrentLocationMarker.buildMarker(_currentLocation),
+                                  CurrentLocationMarker.buildMarker(
+                                    _currentLocation,
+                                  ),
                                 ],
                               ),
                             ],
@@ -214,8 +233,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               top: 10,
                               right: 10,
                               child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 220),
-                                child: FloatingWeatherCard(weather: _homeWeather),
+                                constraints: const BoxConstraints(
+                                  maxWidth: 220,
+                                ),
+                                child: FloatingWeatherCard(
+                                  weather: _homeWeather,
+                                ),
                               ),
                             ),
                         ],
@@ -247,14 +270,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 return Padding(
                                   padding: const EdgeInsets.only(right: 8),
                                   child: InkWell(
-                                    onTap: () => setState(() => _selectedMode = mode),
+                                    onTap: () =>
+                                        setState(() => _selectedMode = mode),
                                     borderRadius: BorderRadius.circular(12),
                                     child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: isSelected
-                                            ? AppColors.primaryNeon.withValues(alpha: 0.16)
+                                            ? AppColors.primaryNeon.withValues(
+                                                alpha: 0.16,
+                                              )
                                             : AppColors.darkSurfaceElevated,
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
@@ -270,15 +301,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           Icon(
                                             mode.icon,
                                             size: 16,
-                                            color: isSelected ? AppColors.primaryNeon : AppColors.textSecondaryDark,
+                                            color: isSelected
+                                                ? AppColors.primaryNeon
+                                                : AppColors.textSecondaryDark,
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
                                             mode.label,
                                             style: TextStyle(
                                               fontSize: 12,
-                                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                              color: isSelected ? AppColors.primaryNeon : AppColors.textSecondaryDark,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.w700
+                                                  : FontWeight.w500,
+                                              color: isSelected
+                                                  ? AppColors.primaryNeon
+                                                  : AppColors.textSecondaryDark,
                                             ),
                                           ),
                                         ],
@@ -302,10 +339,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            icon: const Icon(Icons.navigation_rounded, size: 20),
+                            icon: const Icon(
+                              Icons.navigation_rounded,
+                              size: 20,
+                            ),
                             label: Text(
                               'Start ${_selectedMode.label} Journey',
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
+                              ),
                             ),
                           ),
                         ],
@@ -323,14 +366,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('This Month', style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.w700)),
+                    Text(
+                      'This Month',
+                      style: AppTypography.titleLarge.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
                           child: FuturisticCard(
                             child: _monthlyStat(
-                              Formatters.formatDistance(stats.monthDistanceMeters),
+                              Formatters.formatDistance(
+                                stats.monthDistanceMeters,
+                              ),
                               'Distance',
                               highlight: true,
                             ),
@@ -358,10 +408,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Recent Journeys', style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.w700)),
+                Text(
+                  'Recent Journeys',
+                  style: AppTypography.titleLarge.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 TextButton(
                   onPressed: widget.onNavigateToHistory,
-                  child: const Text('See All', style: TextStyle(color: AppColors.primaryNeon)),
+                  child: const Text(
+                    'See All',
+                    style: TextStyle(color: AppColors.primaryNeon),
+                  ),
                 ),
               ],
             ),
@@ -369,7 +427,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             // Recent Journeys List (Take top 3)
             journeysAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryNeon)),
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryNeon),
+              ),
               error: (err, _) => const SizedBox.shrink(),
               data: (journeys) {
                 if (journeys.isEmpty) {
@@ -378,7 +438,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: Center(
                       child: Text(
                         'No journeys yet. Start your first journey today!',
-                        style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondaryDark),
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.textSecondaryDark,
+                        ),
                       ),
                     ),
                   );
@@ -393,7 +455,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => JourneyDetailScreen(journeyId: j.id),
+                              builder: (_) =>
+                                  JourneyDetailScreen(journeyId: j.id),
                             ),
                           );
                         },
@@ -401,24 +464,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           children: [
                             CircleAvatar(
                               backgroundColor: AppColors.darkSurfaceElevated,
-                              child: Icon(mode.icon, color: AppColors.primaryNeon, size: 20),
+                              child: Icon(
+                                mode.icon,
+                                color: AppColors.primaryNeon,
+                                size: 20,
+                              ),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(mode.label, style: AppTypography.titleMedium),
+                                  Text(
+                                    mode.label,
+                                    style: AppTypography.titleMedium,
+                                  ),
                                   Text(
                                     '${Formatters.formatDistance(j.distanceMeters)} • ${Formatters.formatDuration(j.activeDurationSeconds)}',
-                                    style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondaryDark),
+                                    style: AppTypography.labelSmall.copyWith(
+                                      color: AppColors.textSecondaryDark,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                             Text(
                               Formatters.formatDate(j.startTime),
-                              style: AppTypography.labelSmall.copyWith(color: AppColors.textMutedDark),
+                              style: AppTypography.labelSmall.copyWith(
+                                color: AppColors.textMutedDark,
+                              ),
                             ),
                           ],
                         ),
@@ -442,13 +516,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           value,
           style: AppTypography.largeMetric.copyWith(
             fontWeight: FontWeight.w800,
-            color: highlight ? AppColors.primaryNeon : AppColors.textPrimaryDark,
+            color: highlight
+                ? AppColors.primaryNeon
+                : AppColors.textPrimaryDark,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           label,
-          style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondaryDark),
+          style: AppTypography.labelSmall.copyWith(
+            color: AppColors.textSecondaryDark,
+          ),
         ),
       ],
     );

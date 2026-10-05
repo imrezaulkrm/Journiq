@@ -39,14 +39,15 @@ final geocodingServiceProvider = Provider<IGeocodingService>((ref) {
   return NominatimGeocodingService();
 });
 
-final trackingProvider = StateNotifierProvider<TrackingNotifier, TrackingMetrics>((ref) {
-  return TrackingNotifier(
-    locationService: ref.watch(locationServiceProvider),
-    repository: ref.watch(journeyRepositoryProvider),
-    weatherService: ref.watch(weatherServiceProvider),
-    geocodingService: ref.watch(geocodingServiceProvider),
-  );
-});
+final trackingProvider =
+    StateNotifierProvider<TrackingNotifier, TrackingMetrics>((ref) {
+      return TrackingNotifier(
+        locationService: ref.watch(locationServiceProvider),
+        repository: ref.watch(journeyRepositoryProvider),
+        weatherService: ref.watch(weatherServiceProvider),
+        geocodingService: ref.watch(geocodingServiceProvider),
+      );
+    });
 
 class TrackingNotifier extends StateNotifier<TrackingMetrics> {
   final ILocationService _locationService;
@@ -69,31 +70,40 @@ class TrackingNotifier extends StateNotifier<TrackingMetrics> {
     required JourneyRepository repository,
     required IWeatherService weatherService,
     required IGeocodingService geocodingService,
-  })  : _locationService = locationService,
-        _repository = repository,
-        _weatherService = weatherService,
-        _geocodingService = geocodingService,
-        super(const TrackingMetrics());
+  }) : _locationService = locationService,
+       _repository = repository,
+       _weatherService = weatherService,
+       _geocodingService = geocodingService,
+       super(const TrackingMetrics());
 
   /// Check and restore any unfinished active journey on app launch
   Future<ActiveJourney?> checkActiveRecovery() async {
     try {
       final active = await _repository.getActiveJourney();
       if (active != null) {
-        final recoveredPoints = await _repository.getPointsForJourney(active.id);
+        final recoveredPoints = await _repository.getPointsForJourney(
+          active.id,
+        );
         final mode = JourneyModeX.fromIndex(active.mode);
 
         _journeyStartTime = active.startTime;
-        _filter = GpsQualityFilter(mode, recoveredPoints.isNotEmpty ? recoveredPoints.last : null);
+        _filter = GpsQualityFilter(
+          mode,
+          recoveredPoints.isNotEmpty ? recoveredPoints.last : null,
+        );
 
         state = TrackingMetrics(
           journeyId: active.id,
           mode: mode,
-          status: active.isPaused ? TrackingStatus.paused : TrackingStatus.tracking,
+          status: active.isPaused
+              ? TrackingStatus.paused
+              : TrackingStatus.tracking,
           distanceMeters: active.distanceMeters,
           activeDurationSeconds: active.activeDurationSeconds,
           maxSpeedKmh: active.maxSpeedKmh,
-          currentPoint: recoveredPoints.isNotEmpty ? recoveredPoints.last : null,
+          currentPoint: recoveredPoints.isNotEmpty
+              ? recoveredPoints.last
+              : null,
           points: recoveredPoints,
         );
 
@@ -123,7 +133,8 @@ class TrackingNotifier extends StateNotifier<TrackingMetrics> {
     if (!isServiceEnabled) {
       state = state.copyWith(
         status: TrackingStatus.error,
-        errorMessage: 'Location services are disabled. Please enable GPS to start tracking.',
+        errorMessage:
+            'Location services are disabled. Please enable GPS to start tracking.',
       );
       return false;
     }
@@ -138,7 +149,8 @@ class TrackingNotifier extends StateNotifier<TrackingMetrics> {
         permission == LocationPermission.deniedForever) {
       state = state.copyWith(
         status: TrackingStatus.error,
-        errorMessage: 'Location permission required. Please allow location access.',
+        errorMessage:
+            'Location permission required. Please allow location access.',
       );
       return false;
     }
@@ -220,8 +232,9 @@ class TrackingNotifier extends StateNotifier<TrackingMetrics> {
         // Smoothly decay live speed to 0 if stationary or no recent movement fixes
         var currentSpeed = state.currentSpeedKmh;
         if (_filter?.lastValidPoint != null) {
-          final secondsSinceLastPoint =
-              DateTime.now().difference(_filter!.lastValidPoint!.timestamp).inSeconds;
+          final secondsSinceLastPoint = DateTime.now()
+              .difference(_filter!.lastValidPoint!.timestamp)
+              .inSeconds;
           if (secondsSinceLastPoint >= 3 && currentSpeed > 0) {
             currentSpeed *= 0.4;
             if (currentSpeed < 0.2) currentSpeed = 0.0;
@@ -256,28 +269,30 @@ class TrackingNotifier extends StateNotifier<TrackingMetrics> {
   void _startGpsStream(String journeyId, JourneyMode mode) {
     _gpsSubscription?.cancel();
 
-    _gpsSubscription = _locationService.getPositionStream(
-      notificationTitle: 'Journiq • ${mode.label} in Progress',
-      notificationText: 'Tracking your route in background',
-    ).listen(
-      (candidate) => _handleGpsCandidate(candidate, journeyId),
-      onError: (err) {
-        // GPS errors should not crash the session
-      },
-    );
+    _gpsSubscription = _locationService
+        .getPositionStream(
+          notificationTitle: 'Journiq • ${mode.label} in Progress',
+          notificationText: 'Tracking your route in background',
+        )
+        .listen(
+          (candidate) => _handleGpsCandidate(candidate, journeyId),
+          onError: (err) {
+            // GPS errors should not crash the session
+          },
+        );
   }
 
-  Future<void> _handleGpsCandidate(TrackingPoint candidate, String journeyId) async {
+  Future<void> _handleGpsCandidate(
+    TrackingPoint candidate,
+    String journeyId,
+  ) async {
     if (state.status != TrackingStatus.tracking || _filter == null) return;
 
     if (_justResumed) {
       _justResumed = false;
       // Re-anchor to the post-resume location without adding pause jump distance or distorted speed
       _filter!.reset(candidate);
-      state = state.copyWith(
-        currentPoint: candidate,
-        currentSpeedKmh: 0.0,
-      );
+      state = state.copyWith(currentPoint: candidate, currentSpeedKmh: 0.0);
       return;
     }
 
@@ -311,7 +326,8 @@ class TrackingNotifier extends StateNotifier<TrackingMetrics> {
         ? acceptedPoint.speedKmh
         : state.maxSpeedKmh;
 
-    final updatedPoints = List<TrackingPoint>.of(state.points)..add(acceptedPoint);
+    final updatedPoints = List<TrackingPoint>.of(state.points)
+      ..add(acceptedPoint);
     _unpersistedPoints.add(acceptedPoint);
 
     state = state.copyWith(
@@ -404,7 +420,10 @@ class TrackingNotifier extends StateNotifier<TrackingMetrics> {
     if (state.points.isNotEmpty) {
       final endPt = state.points.last;
       try {
-        weather = await _weatherService.getWeather(endPt.latitude, endPt.longitude);
+        weather = await _weatherService.getWeather(
+          endPt.latitude,
+          endPt.longitude,
+        );
       } catch (_) {
         weather = null;
       }

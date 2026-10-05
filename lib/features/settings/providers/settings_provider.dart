@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum DistanceUnit { km, miles }
+
 enum SpeedUnit { kmh, mph }
 
 class UserSettings {
@@ -29,7 +30,9 @@ class UserSettings {
   }
 }
 
-final settingsProvider = StateNotifierProvider<SettingsNotifier, UserSettings>((ref) {
+final settingsProvider = StateNotifierProvider<SettingsNotifier, UserSettings>((
+  ref,
+) {
   return SettingsNotifier();
 });
 
@@ -52,7 +55,8 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
       themeMode: themeIndex != null && themeIndex < ThemeMode.values.length
           ? ThemeMode.values[themeIndex]
           : ThemeMode.dark,
-      distanceUnit: distanceIndex != null && distanceIndex < DistanceUnit.values.length
+      distanceUnit:
+          distanceIndex != null && distanceIndex < DistanceUnit.values.length
           ? DistanceUnit.values[distanceIndex]
           : DistanceUnit.km,
       speedUnit: speedIndex != null && speedIndex < SpeedUnit.values.length

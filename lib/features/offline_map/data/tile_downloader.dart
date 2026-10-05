@@ -34,7 +34,7 @@ class TileDownloader {
   bool _isPaused = false;
 
   TileDownloader(this._storage, [http.Client? client])
-      : _client = client ?? http.Client();
+    : _client = client ?? http.Client();
 
   void cancel() {
     _isCancelled = true;
@@ -80,7 +80,11 @@ class TileDownloader {
 
   static int _latToY(double lat, double n) {
     final latRad = lat * math.pi / 180.0;
-    final val = (1.0 - (math.log(math.tan(latRad) + (1.0 / math.cos(latRad))) / math.pi)) / 2.0 * n;
+    final val =
+        (1.0 -
+            (math.log(math.tan(latRad) + (1.0 / math.cos(latRad))) / math.pi)) /
+        2.0 *
+        n;
     return val.floor();
   }
 
@@ -145,10 +149,9 @@ class TileDownloader {
           final url = Uri.parse(
             'https://tile.openstreetmap.org/${tile.z}/${tile.x}/${tile.y}.png',
           );
-          final res = await _client.get(
-            url,
-            headers: {'User-Agent': AppConstants.userAgent},
-          ).timeout(const Duration(seconds: 8));
+          final res = await _client
+              .get(url, headers: {'User-Agent': AppConstants.userAgent})
+              .timeout(const Duration(seconds: 8));
 
           if (res.statusCode == 200) {
             await _storage.saveTile(tile.z, tile.x, tile.y, res.bodyBytes);

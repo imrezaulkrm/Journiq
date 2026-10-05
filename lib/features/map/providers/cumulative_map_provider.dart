@@ -33,10 +33,10 @@ class CumulativeMapData {
   });
 
   factory CumulativeMapData.empty() => const CumulativeMapData(
-        totalRoutes: 0,
-        totalDistanceMeters: 0.0,
-        routes: [],
-      );
+    totalRoutes: 0,
+    totalDistanceMeters: 0.0,
+    routes: [],
+  );
 }
 
 final cumulativeMapProvider = FutureProvider<CumulativeMapData>((ref) async {
@@ -53,15 +53,20 @@ final cumulativeMapProvider = FutureProvider<CumulativeMapData>((ref) async {
     final rawCoords = points.map((p) => p.toLatLng()).toList();
 
     // Ramer-Douglas-Peucker simplification for performance across hundreds of journeys
-    final simplified = PolylineSimplifier.simplify(rawCoords, epsilonMeters: 10.0);
+    final simplified = PolylineSimplifier.simplify(
+      rawCoords,
+      epsilonMeters: 10.0,
+    );
 
-    routes.add(CumulativeRoute(
-      journeyId: j.id,
-      mode: JourneyModeX.fromIndex(j.mode),
-      date: j.startTime,
-      distanceMeters: j.distanceMeters,
-      simplifiedPoints: simplified,
-    ));
+    routes.add(
+      CumulativeRoute(
+        journeyId: j.id,
+        mode: JourneyModeX.fromIndex(j.mode),
+        date: j.startTime,
+        distanceMeters: j.distanceMeters,
+        simplifiedPoints: simplified,
+      ),
+    );
   }
 
   return CumulativeMapData(

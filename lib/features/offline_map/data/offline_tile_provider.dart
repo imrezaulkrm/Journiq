@@ -43,7 +43,12 @@ class JourniqTileProvider extends TileProvider {
       // Return local placeholder or empty file
       if (baseStoragePath != null) {
         final localFile = File(
-          p.join(baseStoragePath!, '${coordinates.z}', '${coordinates.x}', '${coordinates.y}.png'),
+          p.join(
+            baseStoragePath!,
+            '${coordinates.z}',
+            '${coordinates.x}',
+            '${coordinates.y}.png',
+          ),
         );
         return FileImage(localFile);
       }

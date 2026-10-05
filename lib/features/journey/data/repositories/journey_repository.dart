@@ -113,15 +113,19 @@ class DriftJourneyRepository implements JourneyRepository {
       );
 
       if (points.isNotEmpty) {
-        final companions = points.map((p) => JourneyPointsCompanion.insert(
-          journeyId: id,
-          latitude: p.latitude,
-          longitude: p.longitude,
-          timestamp: p.timestamp,
-          speedKmh: Value(p.speedKmh),
-          accuracyMeters: Value(p.accuracyMeters),
-          heading: Value(p.heading),
-        )).toList();
+        final companions = points
+            .map(
+              (p) => JourneyPointsCompanion.insert(
+                journeyId: id,
+                latitude: p.latitude,
+                longitude: p.longitude,
+                timestamp: p.timestamp,
+                speedKmh: Value(p.speedKmh),
+                accuracyMeters: Value(p.accuracyMeters),
+                heading: Value(p.heading),
+              ),
+            )
+            .toList();
 
         await _db.pointsDao.insertPointsBatch(companions);
       }
@@ -132,17 +136,24 @@ class DriftJourneyRepository implements JourneyRepository {
   }
 
   @override
-  Future<void> insertPointsBatch(String journeyId, List<TrackingPoint> points) async {
+  Future<void> insertPointsBatch(
+    String journeyId,
+    List<TrackingPoint> points,
+  ) async {
     if (points.isEmpty) return;
-    final companions = points.map((p) => JourneyPointsCompanion.insert(
-      journeyId: journeyId,
-      latitude: p.latitude,
-      longitude: p.longitude,
-      timestamp: p.timestamp,
-      speedKmh: Value(p.speedKmh),
-      accuracyMeters: Value(p.accuracyMeters),
-      heading: Value(p.heading),
-    )).toList();
+    final companions = points
+        .map(
+          (p) => JourneyPointsCompanion.insert(
+            journeyId: journeyId,
+            latitude: p.latitude,
+            longitude: p.longitude,
+            timestamp: p.timestamp,
+            speedKmh: Value(p.speedKmh),
+            accuracyMeters: Value(p.accuracyMeters),
+            heading: Value(p.heading),
+          ),
+        )
+        .toList();
 
     await _db.pointsDao.insertPointsBatch(companions);
   }
@@ -151,7 +162,8 @@ class DriftJourneyRepository implements JourneyRepository {
   Future<List<Journey>> getAllJourneys() => _db.journeysDao.getAllJourneys();
 
   @override
-  Stream<List<Journey>> watchAllJourneys() => _db.journeysDao.watchAllJourneys();
+  Stream<List<Journey>> watchAllJourneys() =>
+      _db.journeysDao.watchAllJourneys();
 
   @override
   Future<Journey?> getJourney(String id) => _db.journeysDao.getJourneyById(id);
@@ -159,14 +171,18 @@ class DriftJourneyRepository implements JourneyRepository {
   @override
   Future<List<TrackingPoint>> getPointsForJourney(String journeyId) async {
     final rows = await _db.pointsDao.getPointsForJourney(journeyId);
-    return rows.map((r) => TrackingPoint(
-      latitude: r.latitude,
-      longitude: r.longitude,
-      timestamp: r.timestamp,
-      speedKmh: r.speedKmh,
-      accuracyMeters: r.accuracyMeters,
-      heading: r.heading,
-    )).toList();
+    return rows
+        .map(
+          (r) => TrackingPoint(
+            latitude: r.latitude,
+            longitude: r.longitude,
+            timestamp: r.timestamp,
+            speedKmh: r.speedKmh,
+            accuracyMeters: r.accuracyMeters,
+            heading: r.heading,
+          ),
+        )
+        .toList();
   }
 
   @override
@@ -184,7 +200,8 @@ class DriftJourneyRepository implements JourneyRepository {
       _db.journeysDao.watchJourneysForMonth(year, month);
 
   @override
-  Future<ActiveJourney?> getActiveJourney() => _db.activeJourneyDao.getActiveJourney();
+  Future<ActiveJourney?> getActiveJourney() =>
+      _db.activeJourneyDao.getActiveJourney();
 
   @override
   Future<void> saveActiveJourney(ActiveJourneysCompanion entry) =>
@@ -211,5 +228,6 @@ class DriftJourneyRepository implements JourneyRepository {
   }
 
   @override
-  Future<void> clearActiveJourney(String id) => _db.activeJourneyDao.clearActiveJourney(id);
+  Future<void> clearActiveJourney(String id) =>
+      _db.activeJourneyDao.clearActiveJourney(id);
 }

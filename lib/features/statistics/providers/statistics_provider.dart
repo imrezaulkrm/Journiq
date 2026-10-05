@@ -93,7 +93,9 @@ final statisticsProvider = Provider<AsyncValue<MobilityStatistics>>((ref) {
     }
 
     final avgDistance = totalDistance / journeys.length;
-    final avgSpeed = totalSeconds > 0 ? (totalDistance / totalSeconds) * 3.6 : 0.0;
+    final avgSpeed = totalSeconds > 0
+        ? (totalDistance / totalSeconds) * 3.6
+        : 0.0;
 
     return MobilityStatistics(
       totalJourneys: journeys.length,

@@ -40,11 +40,7 @@ class EmptyStateView extends StatelessWidget {
                   width: 1,
                 ),
               ),
-              child: Icon(
-                icon,
-                size: 44,
-                color: AppColors.primaryNeon,
-              ),
+              child: Icon(icon, size: 44, color: AppColors.primaryNeon),
             ),
             const SizedBox(height: 20),
             Text(

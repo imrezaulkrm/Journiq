@@ -5,10 +5,7 @@ import '../../../../core/theme/app_typography.dart';
 class FollowMeButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const FollowMeButton({
-    super.key,
-    required this.onPressed,
-  });
+  const FollowMeButton({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {

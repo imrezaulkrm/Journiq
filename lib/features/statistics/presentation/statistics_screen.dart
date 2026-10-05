@@ -17,9 +17,7 @@ class StatisticsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
-      appBar: AppBar(
-        title: const Text('Travel Insights'),
-      ),
+      appBar: AppBar(title: const Text('Travel Insights')),
       body: statsAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primaryNeon),
@@ -36,7 +34,9 @@ class StatisticsScreen extends ConsumerWidget {
           }
 
           final now = DateTime.now();
-          final currentMonthName = Formatters.formatDate(now).split(' ')[1]; // e.g. "Sep"
+          final currentMonthName = Formatters.formatDate(
+            now,
+          ).split(' ')[1]; // e.g. "Sep"
           final currentYearMonth = '$currentMonthName ${now.year}';
 
           return ListView(
@@ -123,7 +123,9 @@ class StatisticsScreen extends ConsumerWidget {
                   children: [
                     Text(
                       'Longest Single Journey',
-                      style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondaryDark),
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.textSecondaryDark,
+                      ),
                     ),
                     Text(
                       Formatters.formatDistance(stats.longestDistanceMeters),
@@ -143,7 +145,10 @@ class StatisticsScreen extends ConsumerWidget {
                 children: [
                   Text('This Month', style: AppTypography.titleMedium),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.darkSurfaceElevated,
                       borderRadius: BorderRadius.circular(10),
@@ -175,10 +180,7 @@ class StatisticsScreen extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: FuturisticCard(
-                      child: _statTile(
-                        'MONTH TRIPS',
-                        '${stats.monthJourneys}',
-                      ),
+                      child: _statTile('MONTH TRIPS', '${stats.monthJourneys}'),
                     ),
                   ),
                 ],
@@ -190,29 +192,42 @@ class StatisticsScreen extends ConsumerWidget {
               const SizedBox(height: 12),
 
               ...JourneyMode.values.map((mode) {
-                final modeData = stats.modeStats[mode] ?? (count: 0, distanceMeters: 0.0);
+                final modeData =
+                    stats.modeStats[mode] ?? (count: 0, distanceMeters: 0.0);
                 if (modeData.count == 0) return const SizedBox.shrink();
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: FuturisticCard(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     child: Row(
                       children: [
                         CircleAvatar(
                           radius: 18,
                           backgroundColor: AppColors.darkSurfaceElevated,
-                          child: Icon(mode.icon, color: AppColors.primaryNeon, size: 18),
+                          child: Icon(
+                            mode.icon,
+                            color: AppColors.primaryNeon,
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(mode.label, style: AppTypography.titleMedium),
+                              Text(
+                                mode.label,
+                                style: AppTypography.titleMedium,
+                              ),
                               Text(
                                 '${modeData.count} ${modeData.count == 1 ? "journey" : "journeys"}',
-                                style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondaryDark),
+                                style: AppTypography.labelSmall.copyWith(
+                                  color: AppColors.textSecondaryDark,
+                                ),
                               ),
                             ],
                           ),

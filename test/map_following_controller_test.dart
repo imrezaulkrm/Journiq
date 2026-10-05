@@ -12,14 +12,14 @@ class MockMapController implements MapController {
 
   @override
   MapCamera get camera => MapCamera(
-        crs: const Epsg3857(),
-        minZoom: 4,
-        maxZoom: 18,
-        center: center,
-        zoom: zoom,
-        rotation: 0,
-        nonRotatedSize: math.Point<double>(400, 800),
-      );
+    crs: const Epsg3857(),
+    minZoom: 4,
+    maxZoom: 18,
+    center: center,
+    zoom: zoom,
+    rotation: 0,
+    nonRotatedSize: math.Point<double>(400, 800),
+  );
 
   @override
   bool move(LatLng newCenter, double newZoom, {Offset? offset, String? id}) {
@@ -40,15 +40,23 @@ void main() {
     testWidgets('initial state is following', (tester) async {
       final mock = MockMapController();
       final vsync = const TestVSync();
-      final controller = MapFollowingController(mapController: mock, vsync: vsync);
+      final controller = MapFollowingController(
+        mapController: mock,
+        vsync: vsync,
+      );
 
       expect(controller.isFollowing, isTrue);
     });
 
-    testWidgets('ignores tiny movements under 3 meter threshold', (tester) async {
+    testWidgets('ignores tiny movements under 3 meter threshold', (
+      tester,
+    ) async {
       final mock = MockMapController();
       final vsync = const TestVSync();
-      final controller = MapFollowingController(mapController: mock, vsync: vsync);
+      final controller = MapFollowingController(
+        mapController: mock,
+        vsync: vsync,
+      );
 
       final initial = const LatLng(23.8103, 90.4125);
       controller.onLocationUpdate(initial);
@@ -69,10 +77,15 @@ void main() {
       expect(mock.center, validMove);
     });
 
-    testWidgets('user gesture disables follow, recenter restores follow', (tester) async {
+    testWidgets('user gesture disables follow, recenter restores follow', (
+      tester,
+    ) async {
       final mock = MockMapController();
       final vsync = const TestVSync();
-      final controller = MapFollowingController(mapController: mock, vsync: vsync);
+      final controller = MapFollowingController(
+        mapController: mock,
+        vsync: vsync,
+      );
 
       expect(controller.isFollowing, isTrue);
 

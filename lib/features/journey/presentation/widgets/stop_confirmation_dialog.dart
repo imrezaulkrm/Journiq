@@ -61,7 +61,10 @@ class StopConfirmationDialog extends StatelessWidget {
           const SizedBox(height: 20),
           _metricRow('Distance', Formatters.formatDistance(distanceMeters)),
           const SizedBox(height: 8),
-          _metricRow('Active Time', Formatters.formatDuration(activeDurationSeconds)),
+          _metricRow(
+            'Active Time',
+            Formatters.formatDuration(activeDurationSeconds),
+          ),
           const SizedBox(height: 8),
           _metricRow('Avg Speed', Formatters.formatSpeed(averageSpeedKmh)),
           const SizedBox(height: 8),

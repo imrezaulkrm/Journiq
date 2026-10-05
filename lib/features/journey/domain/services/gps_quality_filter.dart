@@ -18,19 +18,20 @@ enum GpsFilterResult {
 class GpsQualityFilter {
   final JourneyMode mode;
   TrackingPoint? _lastValidPoint;
-  late final ValidatedSpeedCalculator _speedCalculator = ValidatedSpeedCalculator(mode);
+  late final ValidatedSpeedCalculator _speedCalculator =
+      ValidatedSpeedCalculator(mode);
 
   GpsQualityFilter(this.mode, [TrackingPoint? initialPoint])
-      : _lastValidPoint = initialPoint == null
-            ? null
-            : TrackingPoint(
-                latitude: initialPoint.latitude,
-                longitude: initialPoint.longitude,
-                timestamp: initialPoint.timestamp,
-                speedKmh: 0,
-                accuracyMeters: initialPoint.accuracyMeters,
-                heading: initialPoint.heading,
-              );
+    : _lastValidPoint = initialPoint == null
+          ? null
+          : TrackingPoint(
+              latitude: initialPoint.latitude,
+              longitude: initialPoint.longitude,
+              timestamp: initialPoint.timestamp,
+              speedKmh: 0,
+              accuracyMeters: initialPoint.accuracyMeters,
+              heading: initialPoint.heading,
+            );
 
   TrackingPoint? get lastValidPoint => _lastValidPoint;
 
@@ -63,11 +64,13 @@ class GpsQualityFilter {
     }
 
     // 3. Timestamp Validation (Freshness and Future checks)
-    final ageSeconds = currentTime.difference(candidate.timestamp).inMilliseconds / 1000.0;
+    final ageSeconds =
+        currentTime.difference(candidate.timestamp).inMilliseconds / 1000.0;
     if (ageSeconds > AppConstants.maxTimestampAgeSeconds) {
       return GpsFilterResult.rejectedTimestampStale;
     }
-    if (candidate.timestamp.difference(currentTime).inMilliseconds / 1000.0 > AppConstants.maxFutureTimestampSeconds) {
+    if (candidate.timestamp.difference(currentTime).inMilliseconds / 1000.0 >
+        AppConstants.maxFutureTimestampSeconds) {
       return GpsFilterResult.rejectedTimestampFuture;
     }
 
@@ -93,7 +96,9 @@ class GpsQualityFilter {
       candidate.longitude,
     );
 
-    final timeDeltaMillis = candidate.timestamp.difference(prev.timestamp).inMilliseconds;
+    final timeDeltaMillis = candidate.timestamp
+        .difference(prev.timestamp)
+        .inMilliseconds;
     final timeDeltaSeconds = timeDeltaMillis / 1000.0;
 
     // Reject out-of-order or duplicate timestamp points
@@ -127,7 +132,10 @@ class GpsQualityFilter {
     }
 
     // Point passed all checks!
-    final validatedSpeed = _speedCalculator.calculate(previous: prev, current: candidate);
+    final validatedSpeed = _speedCalculator.calculate(
+      previous: prev,
+      current: candidate,
+    );
     _lastValidPoint = TrackingPoint(
       latitude: candidate.latitude,
       longitude: candidate.longitude,

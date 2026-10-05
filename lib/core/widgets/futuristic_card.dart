@@ -42,17 +42,15 @@ class FuturisticCard extends StatelessWidget {
         : Colors.black.withValues(alpha: 0.08);
 
     final effectiveBg = backgroundColor ?? (enableGlass ? glassBg : defaultBg);
-    final effectiveBorder = borderColor ?? (enableGlass ? glassBorder : defaultBorder);
+    final effectiveBorder =
+        borderColor ?? (enableGlass ? glassBorder : defaultBorder);
 
     Widget content = Container(
       padding: padding,
       decoration: BoxDecoration(
         color: effectiveBg,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(
-          color: effectiveBorder,
-          width: 0.8,
-        ),
+        border: Border.all(color: effectiveBorder, width: 0.8),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.06),

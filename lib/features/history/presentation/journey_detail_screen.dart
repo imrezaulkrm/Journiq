@@ -17,10 +17,7 @@ import '../providers/history_provider.dart';
 class JourneyDetailScreen extends ConsumerWidget {
   final String journeyId;
 
-  const JourneyDetailScreen({
-    super.key,
-    required this.journeyId,
-  });
+  const JourneyDetailScreen({super.key, required this.journeyId});
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final confirm = await showDialog<bool>(
@@ -73,7 +70,10 @@ class JourneyDetailScreen extends ConsumerWidget {
         title: const Text('Journey Details'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, color: AppColors.statusRed),
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              color: AppColors.statusRed,
+            ),
             onPressed: () => _confirmDelete(context, ref),
           ),
         ],
@@ -144,7 +144,11 @@ class JourneyDetailScreen extends ConsumerWidget {
                             height: 28,
                             child: const CircleAvatar(
                               backgroundColor: AppColors.statusGreen,
-                              child: Icon(Icons.play_arrow_rounded, size: 16, color: Colors.black),
+                              child: Icon(
+                                Icons.play_arrow_rounded,
+                                size: 16,
+                                color: Colors.black,
+                              ),
                             ),
                           ),
                           // End pin
@@ -154,7 +158,11 @@ class JourneyDetailScreen extends ConsumerWidget {
                             height: 28,
                             child: const CircleAvatar(
                               backgroundColor: AppColors.statusRed,
-                              child: Icon(Icons.stop_rounded, size: 16, color: Colors.white),
+                              child: Icon(
+                                Icons.stop_rounded,
+                                size: 16,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],
@@ -171,7 +179,9 @@ class JourneyDetailScreen extends ConsumerWidget {
                     Row(
                       children: [
                         CircleAvatar(
-                          backgroundColor: AppColors.primaryNeon.withValues(alpha: 0.18),
+                          backgroundColor: AppColors.primaryNeon.withValues(
+                            alpha: 0.18,
+                          ),
                           child: Icon(mode.icon, color: AppColors.primaryNeon),
                         ),
                         const SizedBox(width: 14),
@@ -203,9 +213,21 @@ class JourneyDetailScreen extends ConsumerWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _metricBox('DISTANCE', Formatters.formatDistance(j.distanceMeters)),
-                              Container(height: 36, width: 1, color: AppColors.darkBorder),
-                              _metricBox('DURATION', Formatters.formatDuration(j.activeDurationSeconds)),
+                              _metricBox(
+                                'DISTANCE',
+                                Formatters.formatDistance(j.distanceMeters),
+                              ),
+                              Container(
+                                height: 36,
+                                width: 1,
+                                color: AppColors.darkBorder,
+                              ),
+                              _metricBox(
+                                'DURATION',
+                                Formatters.formatDuration(
+                                  j.activeDurationSeconds,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -214,9 +236,19 @@ class JourneyDetailScreen extends ConsumerWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _metricBox('AVG SPEED', Formatters.formatSpeed(j.averageSpeedKmh)),
-                              Container(height: 36, width: 1, color: AppColors.darkBorder),
-                              _metricBox('MAX SPEED', Formatters.formatSpeed(j.maxSpeedKmh)),
+                              _metricBox(
+                                'AVG SPEED',
+                                Formatters.formatSpeed(j.averageSpeedKmh),
+                              ),
+                              Container(
+                                height: 36,
+                                width: 1,
+                                color: AppColors.darkBorder,
+                              ),
+                              _metricBox(
+                                'MAX SPEED',
+                                Formatters.formatSpeed(j.maxSpeedKmh),
+                              ),
                             ],
                           ),
                         ],
@@ -231,16 +263,36 @@ class JourneyDetailScreen extends ConsumerWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Started', style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondaryDark)),
-                              Text(Formatters.formatTime(j.startTime), style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+                              Text(
+                                'Started',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppColors.textSecondaryDark,
+                                ),
+                              ),
+                              Text(
+                                Formatters.formatTime(j.startTime),
+                                style: AppTypography.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Finished', style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondaryDark)),
-                              Text(Formatters.formatTime(j.endTime), style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+                              Text(
+                                'Finished',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppColors.textSecondaryDark,
+                                ),
+                              ),
+                              Text(
+                                Formatters.formatTime(j.endTime),
+                                style: AppTypography.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -253,7 +305,11 @@ class JourneyDetailScreen extends ConsumerWidget {
                       FuturisticCard(
                         child: Row(
                           children: [
-                            const Icon(Icons.wb_sunny_rounded, color: AppColors.accentAmber, size: 24),
+                            const Icon(
+                              Icons.wb_sunny_rounded,
+                              color: AppColors.accentAmber,
+                              size: 24,
+                            ),
                             const SizedBox(width: 12),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,7 +320,9 @@ class JourneyDetailScreen extends ConsumerWidget {
                                 ),
                                 Text(
                                   'Rain: ${j.weatherRainProbability ?? 0}% • Wind: ${j.weatherWindSpeed?.toStringAsFixed(1) ?? "0"} km/h',
-                                  style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondaryDark),
+                                  style: AppTypography.labelSmall.copyWith(
+                                    color: AppColors.textSecondaryDark,
+                                  ),
                                 ),
                               ],
                             ),
@@ -279,12 +337,17 @@ class JourneyDetailScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Areas Covered', style: AppTypography.titleMedium),
+                          Text(
+                            'Areas Covered',
+                            style: AppTypography.titleMedium,
+                          ),
                           const SizedBox(height: 8),
                           if (areas.isEmpty)
                             Text(
                               'Area details unavailable',
-                              style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondaryDark),
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppColors.textSecondaryDark,
+                              ),
                             )
                           else
                             Wrap(
@@ -292,8 +355,11 @@ class JourneyDetailScreen extends ConsumerWidget {
                               runSpacing: 8,
                               children: areas.map((a) {
                                 return Chip(
-                                  backgroundColor: AppColors.darkSurfaceElevated,
-                                  side: const BorderSide(color: AppColors.darkBorder),
+                                  backgroundColor:
+                                      AppColors.darkSurfaceElevated,
+                                  side: const BorderSide(
+                                    color: AppColors.darkBorder,
+                                  ),
                                   label: Text(
                                     a,
                                     style: AppTypography.labelSmall.copyWith(
@@ -320,9 +386,20 @@ class JourneyDetailScreen extends ConsumerWidget {
   Widget _metricBox(String label, String value) {
     return Column(
       children: [
-        Text(value, style: AppTypography.largeMetric.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          value,
+          style: AppTypography.largeMetric.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label, style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondaryDark, fontSize: 10)),
+        Text(
+          label,
+          style: AppTypography.labelSmall.copyWith(
+            color: AppColors.textSecondaryDark,
+            fontSize: 10,
+          ),
+        ),
       ],
     );
   }

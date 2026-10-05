@@ -44,7 +44,10 @@ class OfflineTileStorage {
 
     var totalBytes = 0;
     try {
-      await for (final entity in base.list(recursive: true, followLinks: false)) {
+      await for (final entity in base.list(
+        recursive: true,
+        followLinks: false,
+      )) {
         if (entity is File) {
           totalBytes += await entity.length();
         }

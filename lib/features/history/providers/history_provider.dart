@@ -8,9 +8,13 @@ final allJourneysProvider = StreamProvider<List<Journey>>((ref) {
   return repo.watchAllJourneys();
 });
 
-final journeyDetailProvider = FutureProvider.family<({Journey? journey, List<TrackingPoint> points}), String>((ref, id) async {
-  final repo = ref.watch(journeyRepositoryProvider);
-  final journey = await repo.getJourney(id);
-  final points = await repo.getPointsForJourney(id);
-  return (journey: journey, points: points);
-});
+final journeyDetailProvider =
+    FutureProvider.family<
+      ({Journey? journey, List<TrackingPoint> points}),
+      String
+    >((ref, id) async {
+      final repo = ref.watch(journeyRepositoryProvider);
+      final journey = await repo.getJourney(id);
+      final points = await repo.getPointsForJourney(id);
+      return (journey: journey, points: points);
+    });
