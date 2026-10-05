@@ -31,15 +31,17 @@ class AppUpdateService {
       final response = await _client
           .get(configurationUri!)
           .timeout(const Duration(seconds: 4));
-      if (response.statusCode < 200 || response.statusCode >= 300){
-        return cached;}
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return cached;
+      }
       final info = UpdateInfo.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
       if (info.latestVersion.isEmpty ||
           info.minimumSupportedVersion.isEmpty ||
-          info.updateUrl.isEmpty){
-        return cached;}
+          info.updateUrl.isEmpty) {
+        return cached;
+      }
       await prefs.setString('journiq_update_config', response.body);
       await prefs.setInt(
         'journiq_update_checked_at',
