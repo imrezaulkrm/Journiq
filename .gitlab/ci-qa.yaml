@@ -24,9 +24,9 @@ flutter-analyze:
         }
 
         flutter pub get || { send_notification "Analyze Failure" "pub get failed 😱"; exit 1; }
-        # flutter analyze || { send_notification "Analyze Failure" "Who broke the code? 🔍"; exit 1; }
+        flutter analyze || { send_notification "Analyze Failure" "Who broke the code? 🔍"; exit 1; }
         dart format --output=none --set-exit-if-changed . || { send_notification "Analyze Failure" "Format check failed 🧹"; exit 1; }
-        dart format --check . || { send_notification "Analyze Failure" "Format check failed 🧹"; exit 1; }
+        # dart format --check . || { send_notification "Analyze Failure" "Format check failed 🧹"; exit 1; }
 
         send_notification "Analyze Success" "Code analysis passed ✅"
       EOF
@@ -85,7 +85,7 @@ sonarqube-report:
           curl -s -X POST -H "Content-Type: application/json" -d "$payload" "$GOOGLE_CHAT_WEBHOOK_URL" || echo "Failed to send notification"
         }
 
-        export SONAR_PROJECT_KEY=android-app-qa
+        export SONAR_PROJECT_KEY="android-app-qa"
         export SONAR_PROJECT_NAME="Android App QA"
 
         git fetch origin "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-qa}" --depth=100 || \
