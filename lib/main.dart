@@ -80,8 +80,10 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed &&
         (_lastCheck == null ||
-            DateTime.now().difference(_lastCheck!) > const Duration(hours: 6)))
+            DateTime.now().difference(_lastCheck!) >
+                const Duration(hours: 6))) {
       _check();
+    }
   }
 
   Future<void> _check() async {
@@ -131,13 +133,15 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    if (_checking && _service.configurationUri != null)
+    if (_checking && _service.configurationUri != null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     final requirement =
         _info?.requirementFor(_service.currentVersion) ??
         UpdateRequirement.none;
-    if (requirement == UpdateRequirement.mandatory)
+    if (requirement == UpdateRequirement.mandatory) {
       return _UpdateRequired(info: _info!);
+    }
     if (requirement == UpdateRequirement.optional && !_optionalShown) {
       _optionalShown = true;
       WidgetsBinding.instance.addPostFrameCallback(
