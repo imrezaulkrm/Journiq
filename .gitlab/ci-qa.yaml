@@ -207,10 +207,6 @@ sonarqube-report:
   tags:
     - qa
 
-# ════════════════════════════════════════════════════════════
-# QA BRANCH এ PUSH হলে (merge পরে)
-# APK Build + Sign → GitLab Artifacts + Nexus → Google Chat
-# ════════════════════════════════════════════════════════════
 
 build-apk:
   stage: build
@@ -250,7 +246,7 @@ build-apk:
         mv build/app/outputs/apk/release/app-release.apk \
            build/app/outputs/apk/release/android-app-qa-${APK_TAG}.apk
 
-        echo "APK_TAG=${APK_TAG}" > /tmp/apk_info.env
+        echo "APK_TAG=${APK_TAG}" > apk_info.env
 
         send_notification "Build Success" "APK built, uploading... 📦"
       EOF
@@ -258,7 +254,7 @@ build-apk:
     paths:
       - build/app/outputs/apk/release/android-app-qa-*.apk
     reports:
-      dotenv: /tmp/apk_info.env
+      dotenv: apk_info.env
     expire_in: 30 days
   retry:
     max: 2
@@ -293,28 +289,28 @@ upload-nexus:
         NEXUS_REPO="${NEXUS_URL}/repository/android-apk-qa"
 
         # Versioned copy রাখো
-        curl -u "$NEXUS_USER:$NEXUS_PASSWORD" \
+        curl -k -H "Authorization: Basic ${NEXUS_AUTH_TOKEN}" \
           --upload-file "$APK_FILE" \
           "${NEXUS_REPO}/${APK_FILENAME}" \
           || { send_notification "Deploy Failure" "Nexus versioned upload failed 🛑"; exit 1; }
 
         # Latest overwrite করো
-        curl -u "$NEXUS_USER:$NEXUS_PASSWORD" \
+        curl -k -H "Authorization: Basic ${NEXUS_AUTH_TOKEN} " \
           --upload-file "$APK_FILE" \
           "${NEXUS_REPO}/android-app-qa-latest.apk" \
           || { send_notification "Deploy Failure" "Nexus latest update failed 🛑"; exit 1; }
 
         GITLAB_ARTIFACT_URL="${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/file/build/app/outputs/apk/release/${APK_FILENAME}"
 
-        echo "APK_NEXUS_URL=${NEXUS_REPO}/${APK_FILENAME}" >> /tmp/apk_info.env
-        echo "APK_NEXUS_LATEST_URL=${NEXUS_REPO}/android-app-qa-latest.apk" >> /tmp/apk_info.env
-        echo "APK_GITLAB_URL=${GITLAB_ARTIFACT_URL}" >> /tmp/apk_info.env
+        echo "APK_NEXUS_URL=${NEXUS_REPO}/${APK_FILENAME}" >> apk_info.env
+        echo "APK_NEXUS_LATEST_URL=${NEXUS_REPO}/android-app-qa-latest.apk" >> apk_info.env
+        echo "APK_GITLAB_URL=${GITLAB_ARTIFACT_URL}" >> apk_info.env
 
         send_notification "Upload Success" "APK uploaded! Notifying QA team 🎉"
       EOF
   artifacts:
     reports:
-      dotenv: /tmp/apk_info.env
+      dotenv: apk_info.env
   retry:
     max: 2
     when:
