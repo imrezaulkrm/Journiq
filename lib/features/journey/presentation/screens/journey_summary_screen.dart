@@ -16,10 +16,10 @@ class JourneySummaryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final detailAsync = ref.watch(journeyDetailProvider(journeyId));
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('Journey Summary'),
@@ -82,7 +82,9 @@ class JourneySummaryScreen extends ConsumerWidget {
                     Text(
                       '${mode.label} • ${Formatters.formatDate(j.startTime)}',
                       style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textSecondaryDark,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                   ],
@@ -108,7 +110,9 @@ class JourneySummaryScreen extends ConsumerWidget {
                         Text(
                           'DISTANCE',
                           style: AppTypography.labelSmall.copyWith(
-                            color: AppColors.textSecondaryDark,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
                           ),
                         ),
                       ],
@@ -116,7 +120,7 @@ class JourneySummaryScreen extends ConsumerWidget {
                     Container(
                       height: 44,
                       width: 1,
-                      color: AppColors.darkBorder,
+                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
                     ),
                     Column(
                       children: [
@@ -130,7 +134,9 @@ class JourneySummaryScreen extends ConsumerWidget {
                         Text(
                           'ACTIVE TIME',
                           style: AppTypography.labelSmall.copyWith(
-                            color: AppColors.textSecondaryDark,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
                           ),
                         ),
                       ],

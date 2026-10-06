@@ -17,9 +17,10 @@ class ModeSelectionSheet extends StatefulWidget {
     BuildContext context, {
     JourneyMode initialMode = JourneyMode.walking,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return showModalBottomSheet<JourneyMode>(
       context: context,
-      backgroundColor: AppColors.darkSurface,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -46,6 +47,8 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -58,7 +61,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.darkBorder,
+                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -74,7 +77,9 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
             Text(
               'Select how you are travelling to optimize tracking speed filters.',
               style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textSecondaryDark,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
               ),
             ),
             const SizedBox(height: 20),
@@ -99,12 +104,16 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.primaryNeon.withValues(alpha: 0.15)
-                          : AppColors.darkSurfaceElevated,
+                          : (isDark
+                              ? AppColors.darkSurfaceElevated
+                              : AppColors.lightSurfaceElevated),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primaryNeon
-                            : AppColors.darkBorder,
+                            : (isDark
+                                ? AppColors.darkBorder
+                                : AppColors.lightBorder),
                         width: isSelected ? 1.8 : 1,
                       ),
                     ),
@@ -116,7 +125,9 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                           size: 30,
                           color: isSelected
                               ? AppColors.primaryNeon
-                              : AppColors.textSecondaryDark,
+                              : (isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -127,7 +138,9 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                                 : FontWeight.w500,
                             color: isSelected
                                 ? AppColors.primaryNeon
-                                : AppColors.textPrimaryDark,
+                                : (isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight),
                           ),
                         ),
                       ],

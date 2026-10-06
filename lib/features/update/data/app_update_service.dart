@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../domain/update_info.dart';
 
 class AppUpdateService {
@@ -8,6 +9,8 @@ class AppUpdateService {
   final Uri? configurationUri;
   final Duration cacheTtl;
   final http.Client _client;
+
+  static const String _keyDismissedVersion = 'journiq_dismissed_update_version';
 
   AppUpdateService({
     required this.currentVersion,
@@ -50,6 +53,52 @@ class AppUpdateService {
       return info;
     } catch (_) {
       return cached;
+    }
+  }
+
+  Future<void> dismissVersion(String version) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyDismissedVersion, version.trim());
+  }
+
+  Future<bool> isVersionDismissed(String version) async {
+    final prefs = await SharedPreferences.getInstance();
+    final dismissed = prefs.getString(_keyDismissedVersion)?.trim();
+    return dismissed == version.trim();
+  }
+
+  Future<void> clearDismissedVersion() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyDismissedVersion);
+  }
+
+  static Future<bool> launchUpdateUrl(String url) async {
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null) return false;
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (launched) return true;
+    } catch (_) {}
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.platformDefault,
+      );
+      if (launched) return true;
+    } catch (_) {}
+
+    try {
+      return await launchUrl(
+        uri,
+        mode: LaunchMode.inAppBrowserView,
+      );
+    } catch (_) {
+      return false;
     }
   }
 

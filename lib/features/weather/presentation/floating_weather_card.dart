@@ -18,6 +18,7 @@ class _FloatingWeatherCardState extends State<FloatingWeatherCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final w = widget.weather;
 
     if (w == null) {
@@ -36,7 +37,9 @@ class _FloatingWeatherCardState extends State<FloatingWeatherCard> {
             Text(
               'Weather unavailable • Tracking unaffected',
               style: AppTypography.labelSmall.copyWith(
-                color: AppColors.textSecondaryDark,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
               ),
             ),
           ],
@@ -84,7 +87,9 @@ class _FloatingWeatherCardState extends State<FloatingWeatherCard> {
                       ? Icons.keyboard_arrow_up_rounded
                       : Icons.keyboard_arrow_down_rounded,
                   size: 18,
-                  color: AppColors.textSecondaryDark,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
                 ),
               ],
             ),
@@ -94,7 +99,9 @@ class _FloatingWeatherCardState extends State<FloatingWeatherCard> {
               style: AppTypography.labelSmall.copyWith(
                 color: w.rainProbability >= 40
                     ? AppColors.statusOrange
-                    : AppColors.textSecondaryDark,
+                    : (isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -105,7 +112,9 @@ class _FloatingWeatherCardState extends State<FloatingWeatherCard> {
               Text(
                 'Next ~2 Hours Rain Outlook',
                 style: AppTypography.labelSmall.copyWith(
-                  color: AppColors.textSecondaryDark,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
                 ),
               ),
               const SizedBox(height: 4),
@@ -123,14 +132,18 @@ class _FloatingWeatherCardState extends State<FloatingWeatherCard> {
                   Text(
                     'Humidity: ${w.humidity}%',
                     style: AppTypography.labelSmall.copyWith(
-                      color: AppColors.textSecondaryDark,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Text(
                     'Wind: ${w.windSpeedKmh.toStringAsFixed(1)} km/h',
                     style: AppTypography.labelSmall.copyWith(
-                      color: AppColors.textSecondaryDark,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
                     ),
                   ),
                 ],

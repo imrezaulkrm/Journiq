@@ -1,9 +1,12 @@
 class AppConstants {
   static const String appName = 'Journiq';
+  static const String appVersion = '1.0.2';
   static const String appTagline = 'Track Every Journey.';
   static const String appPackageName = 'com.journiq.app';
+  static const String defaultUpdateUrl =
+      'https://imrezaulkrm.github.io/journiq/update.json';
   static const String userAgent =
-      'JourniqApp/1.0.0 (contact: support@journiq.app)';
+      'JourniqApp/$appVersion (contact: support@journiq.app)';
   static const String osmTileUrl =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   static const String osmAttribution = '© OpenStreetMap contributors';

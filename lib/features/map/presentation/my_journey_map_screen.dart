@@ -45,12 +45,12 @@ class _MyJourneyMapScreenState extends ConsumerState<MyJourneyMapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final mapDataAsync = ref.watch(cumulativeMapProvider);
     final storage = ref.watch(offlineStorageProvider);
     final mapMode = ref.watch(mapModeProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
       appBar: AppBar(title: const Text('My Journey Map')),
       body: mapDataAsync.when(
         loading: () => const Center(
@@ -138,7 +138,9 @@ class _MyJourneyMapScreenState extends ConsumerState<MyJourneyMapScreen> {
                           Text(
                             'SAVED ROUTES',
                             style: AppTypography.labelSmall.copyWith(
-                              color: AppColors.textSecondaryDark,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                         ],
@@ -146,7 +148,7 @@ class _MyJourneyMapScreenState extends ConsumerState<MyJourneyMapScreen> {
                       Container(
                         height: 36,
                         width: 1,
-                        color: AppColors.darkBorder,
+                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
                       ),
                       Column(
                         children: [
@@ -161,7 +163,9 @@ class _MyJourneyMapScreenState extends ConsumerState<MyJourneyMapScreen> {
                           Text(
                             'TOTAL DISTANCE',
                             style: AppTypography.labelSmall.copyWith(
-                              color: AppColors.textSecondaryDark,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                         ],
@@ -170,6 +174,24 @@ class _MyJourneyMapScreenState extends ConsumerState<MyJourneyMapScreen> {
                   ),
                 ),
               ),
+
+              // Recenter map button
+              if (allCoords.isNotEmpty)
+                Positioned(
+                  right: 16,
+                  bottom: 24,
+                  child: FloatingActionButton.small(
+                    heroTag: 'cumulative_map_recenter',
+                    backgroundColor: isDark
+                        ? AppColors.darkSurfaceElevated
+                        : AppColors.lightSurface,
+                    foregroundColor: AppColors.primaryNeon,
+                    onPressed: () {
+                      _mapController.move(initialCenter, 13.0);
+                    },
+                    child: const Icon(Icons.my_location_rounded),
+                  ),
+                ),
             ],
           );
         },

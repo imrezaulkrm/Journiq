@@ -1,15 +1,21 @@
 enum UpdateRequirement { none, optional, mandatory }
 
 class UpdateInfo {
+  final String appName;
   final String latestVersion;
   final String minimumSupportedVersion;
   final String updateUrl;
+  final String? downloadUrl;
+  final String? releaseUrl;
   final List<String> releaseNotes;
 
   const UpdateInfo({
+    this.appName = 'Journiq',
     required this.latestVersion,
     required this.minimumSupportedVersion,
     required this.updateUrl,
+    this.downloadUrl,
+    this.releaseUrl,
     required this.releaseNotes,
   });
 
@@ -28,10 +34,21 @@ class UpdateInfo {
         ? [rawNotes.trim()]
         : <String>[];
 
+    final rawUpdateUrl = value('updateUrl');
+    final rawDownloadUrl = value('downloadUrl');
+    final rawReleaseUrl = value('releaseUrl');
+
+    final effectiveUpdateUrl = rawUpdateUrl.isNotEmpty
+        ? rawUpdateUrl
+        : (rawDownloadUrl.isNotEmpty ? rawDownloadUrl : rawReleaseUrl);
+
     return UpdateInfo(
+      appName: value('appName').isNotEmpty ? value('appName') : 'Journiq',
       latestVersion: value('latestVersion'),
       minimumSupportedVersion: value('minimumSupportedVersion'),
-      updateUrl: value('updateUrl'),
+      updateUrl: effectiveUpdateUrl,
+      downloadUrl: rawDownloadUrl.isNotEmpty ? rawDownloadUrl : null,
+      releaseUrl: rawReleaseUrl.isNotEmpty ? rawReleaseUrl : null,
       releaseNotes: notes,
     );
   }

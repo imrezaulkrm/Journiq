@@ -129,7 +129,6 @@ class _LiveJourneyScreenState extends ConsumerState<LiveJourneyScreen>
     final routePoints = metrics.routeCoordinates;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
       body: Stack(
         children: [
           // 1. The Dominant Live Map

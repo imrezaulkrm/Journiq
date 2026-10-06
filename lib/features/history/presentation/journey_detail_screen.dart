@@ -20,13 +20,16 @@ class JourneyDetailScreen extends ConsumerWidget {
   const JourneyDetailScreen({super.key, required this.journeyId});
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: AppColors.darkBorder),
+          side: BorderSide(
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+          ),
         ),
         title: const Text('Delete this journey?'),
         content: const Text(
@@ -65,7 +68,6 @@ class JourneyDetailScreen extends ConsumerWidget {
     final mapMode = ref.watch(mapModeProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
       appBar: AppBar(
         title: const Text('Journey Details'),
         actions: [

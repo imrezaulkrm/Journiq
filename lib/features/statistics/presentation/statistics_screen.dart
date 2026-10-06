@@ -13,10 +13,10 @@ class StatisticsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final statsAsync = ref.watch(statisticsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
       appBar: AppBar(title: const Text('Travel Insights')),
       body: statsAsync.when(
         loading: () => const Center(
@@ -54,6 +54,7 @@ class StatisticsScreen extends ConsumerWidget {
                         'TOTAL DISTANCE',
                         Formatters.formatDistance(stats.totalDistanceMeters),
                         highlightColor: AppColors.primaryNeon,
+                        isDark: isDark,
                       ),
                     ),
                   ),
@@ -63,6 +64,7 @@ class StatisticsScreen extends ConsumerWidget {
                       child: _statTile(
                         'TOTAL JOURNEYS',
                         '${stats.totalJourneys}',
+                        isDark: isDark,
                       ),
                     ),
                   ),
@@ -77,6 +79,7 @@ class StatisticsScreen extends ConsumerWidget {
                       child: _statTile(
                         'ACTIVE TIME',
                         Formatters.formatDuration(stats.totalActiveSeconds),
+                        isDark: isDark,
                       ),
                     ),
                   ),
@@ -86,6 +89,7 @@ class StatisticsScreen extends ConsumerWidget {
                       child: _statTile(
                         'AVG DISTANCE',
                         Formatters.formatDistance(stats.averageDistanceMeters),
+                        isDark: isDark,
                       ),
                     ),
                   ),
@@ -100,6 +104,7 @@ class StatisticsScreen extends ConsumerWidget {
                       child: _statTile(
                         'AVG SPEED',
                         Formatters.formatSpeed(stats.averageSpeedKmh),
+                        isDark: isDark,
                       ),
                     ),
                   ),
@@ -110,6 +115,7 @@ class StatisticsScreen extends ConsumerWidget {
                         'MAX SPEED',
                         Formatters.formatSpeed(stats.maxSpeedKmh),
                         highlightColor: AppColors.primaryTeal,
+                        isDark: isDark,
                       ),
                     ),
                   ),
@@ -124,7 +130,9 @@ class StatisticsScreen extends ConsumerWidget {
                     Text(
                       'Longest Single Journey',
                       style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textSecondaryDark,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                     Text(
@@ -150,9 +158,13 @@ class StatisticsScreen extends ConsumerWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.darkSurfaceElevated,
+                      color: isDark
+                          ? AppColors.darkSurfaceElevated
+                          : AppColors.lightSurfaceElevated,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.darkBorder),
+                      border: Border.all(
+                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                      ),
                     ),
                     child: Text(
                       currentYearMonth,
@@ -174,13 +186,18 @@ class StatisticsScreen extends ConsumerWidget {
                         'MONTH DISTANCE',
                         Formatters.formatDistance(stats.monthDistanceMeters),
                         highlightColor: AppColors.primaryNeon,
+                        isDark: isDark,
                       ),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: FuturisticCard(
-                      child: _statTile('MONTH TRIPS', '${stats.monthJourneys}'),
+                      child: _statTile(
+                        'MONTH TRIPS',
+                        '${stats.monthJourneys}',
+                        isDark: isDark,
+                      ),
                     ),
                   ),
                 ],
@@ -207,7 +224,9 @@ class StatisticsScreen extends ConsumerWidget {
                       children: [
                         CircleAvatar(
                           radius: 18,
-                          backgroundColor: AppColors.darkSurfaceElevated,
+                          backgroundColor: isDark
+                              ? AppColors.darkSurfaceElevated
+                              : AppColors.lightSurfaceElevated,
                           child: Icon(
                             mode.icon,
                             color: AppColors.primaryNeon,
@@ -226,7 +245,9 @@ class StatisticsScreen extends ConsumerWidget {
                               Text(
                                 '${modeData.count} ${modeData.count == 1 ? "journey" : "journeys"}',
                                 style: AppTypography.labelSmall.copyWith(
-                                  color: AppColors.textSecondaryDark,
+                                  color: isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondaryLight,
                                 ),
                               ),
                             ],
@@ -251,7 +272,12 @@ class StatisticsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _statTile(String label, String value, {Color? highlightColor}) {
+  Widget _statTile(
+    String label,
+    String value, {
+    Color? highlightColor,
+    bool isDark = true,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -260,14 +286,19 @@ class StatisticsScreen extends ConsumerWidget {
           style: AppTypography.displayMetric.copyWith(
             fontSize: 22,
             fontWeight: FontWeight.w800,
-            color: highlightColor ?? AppColors.textPrimaryDark,
+            color: highlightColor ??
+                (isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight),
           ),
         ),
         const SizedBox(height: 2),
         Text(
           label,
           style: AppTypography.labelSmall.copyWith(
-            color: AppColors.textSecondaryDark,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
             fontSize: 10,
           ),
         ),

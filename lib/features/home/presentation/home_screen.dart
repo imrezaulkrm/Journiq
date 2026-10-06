@@ -72,13 +72,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final statsAsync = ref.watch(statisticsProvider);
     final mapMode = ref.watch(mapModeProvider);
     final storage = ref.watch(offlineStorageProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final now = DateTime.now();
 
     final centerCoord =
         _currentLocation?.toLatLng() ?? const LatLng(23.8103, 90.4125);
 
+    // Dynamic greeting based on time of day
+    final hour = now.hour;
+    final greeting = hour < 12
+        ? 'Good morning'
+        : hour < 17
+            ? 'Good afternoon'
+            : 'Good evening';
+
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -90,18 +98,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      AppConstants.appName,
-                      style: AppTypography.displayMetric.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimaryDark,
-                        letterSpacing: -1.0,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          AppConstants.appName,
+                          style: AppTypography.displayMetric.copyWith(
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -1.0,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryNeon.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: AppColors.primaryNeon.withValues(alpha: 0.4),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            'v${AppConstants.appVersion}',
+                            style: AppTypography.labelSmall.copyWith(
+                              color: AppColors.primaryNeon,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     Text(
-                      AppConstants.appTagline,
+                      '$greeting • ${AppConstants.appTagline}',
                       style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textSecondaryDark,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -113,9 +149,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.darkSurfaceElevated,
+                    color: isDark
+                        ? AppColors.darkSurfaceElevated
+                        : AppColors.lightSurfaceElevated,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.darkBorder),
+                    border: Border.all(
+                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                    ),
                   ),
                   child: Text(
                     Formatters.formatDate(now),
@@ -286,12 +326,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                             ? AppColors.primaryNeon.withValues(
                                                 alpha: 0.16,
                                               )
-                                            : AppColors.darkSurfaceElevated,
+                                            : (isDark
+                                                ? AppColors.darkSurfaceElevated
+                                                : AppColors.lightSurfaceElevated),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
                                           color: isSelected
                                               ? AppColors.primaryNeon
-                                              : AppColors.darkBorder,
+                                              : (isDark
+                                                  ? AppColors.darkBorder
+                                                  : AppColors.lightBorder),
                                           width: isSelected ? 1.2 : 0.8,
                                         ),
                                       ),
@@ -303,7 +347,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                             size: 16,
                                             color: isSelected
                                                 ? AppColors.primaryNeon
-                                                : AppColors.textSecondaryDark,
+                                                : (isDark
+                                                    ? AppColors.textSecondaryDark
+                                                    : AppColors.textSecondaryLight),
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
@@ -315,7 +361,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                   : FontWeight.w500,
                                               color: isSelected
                                                   ? AppColors.primaryNeon
-                                                  : AppColors.textSecondaryDark,
+                                                  : (isDark
+                                                      ? AppColors.textSecondaryDark
+                                                      : AppColors.textSecondaryLight),
                                             ),
                                           ),
                                         ],
@@ -439,7 +487,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Text(
                         'No journeys yet. Start your first journey today!',
                         style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.textSecondaryDark,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ),
@@ -463,7 +513,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: AppColors.darkSurfaceElevated,
+                              backgroundColor: isDark
+                                  ? AppColors.darkSurfaceElevated
+                                  : AppColors.lightSurfaceElevated,
                               child: Icon(
                                 mode.icon,
                                 color: AppColors.primaryNeon,
@@ -482,7 +534,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   Text(
                                     '${Formatters.formatDistance(j.distanceMeters)} • ${Formatters.formatDuration(j.activeDurationSeconds)}',
                                     style: AppTypography.labelSmall.copyWith(
-                                      color: AppColors.textSecondaryDark,
+                                      color: isDark
+                                          ? AppColors.textSecondaryDark
+                                          : AppColors.textSecondaryLight,
                                     ),
                                   ),
                                 ],
@@ -491,7 +545,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             Text(
                               Formatters.formatDate(j.startTime),
                               style: AppTypography.labelSmall.copyWith(
-                                color: AppColors.textMutedDark,
+                                color: isDark
+                                    ? AppColors.textMutedDark
+                                    : AppColors.textMutedLight,
                               ),
                             ),
                           ],
@@ -509,6 +565,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _monthlyStat(String value, String label, {bool highlight = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -518,14 +575,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             fontWeight: FontWeight.w800,
             color: highlight
                 ? AppColors.primaryNeon
-                : AppColors.textPrimaryDark,
+                : (isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight),
           ),
         ),
         const SizedBox(height: 2),
         Text(
           label,
           style: AppTypography.labelSmall.copyWith(
-            color: AppColors.textSecondaryDark,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
           ),
         ),
       ],

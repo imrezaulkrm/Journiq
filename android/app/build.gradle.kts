@@ -28,10 +28,21 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("keystore.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
-            keyAlias = System.getenv("KEY_ALIAS") ?: ""
-            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+            val releaseKeystore = file("keystore.jks")
+            val keystorePassword = System.getenv("KEYSTORE_PASSWORD")
+            val keyAliasValue = System.getenv("KEY_ALIAS")
+            val keyPasswordValue = System.getenv("KEY_PASSWORD")
+            if (!releaseKeystore.exists() || keystorePassword.isNullOrBlank() ||
+                keyAliasValue.isNullOrBlank() || keyPasswordValue.isNullOrBlank()) {
+                throw GradleException(
+                    "Production release signing requires the protected CI/CD " +
+                        "keystore and signing variables."
+                )
+            }
+            storeFile = releaseKeystore
+            storePassword = keystorePassword
+            keyAlias = keyAliasValue
+            keyPassword = keyPasswordValue
         }
     }
 

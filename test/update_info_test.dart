@@ -21,4 +21,43 @@ void main() {
   test('malformed versions fail safely to zero', () {
     expect(VersionComparator.compare('not-a-version', '0.0.1'), lessThan(0));
   });
+
+  test('parses full GitHub release JSON payload properly', () {
+    final json = {
+      'appName': 'Journiq',
+      'latestVersion': '1.0.1',
+      'minimumSupportedVersion': '1.0.0',
+      'updateUrl':
+          'https://github.com/imrezaulkrm/Journiq/releases/download/v1.0.1/Journiq-v1.0.1.apk',
+      'downloadUrl':
+          'https://github.com/imrezaulkrm/Journiq/releases/download/v1.0.1/Journiq-v1.0.1.apk',
+      'releaseUrl': 'https://github.com/imrezaulkrm/Journiq/releases/tag/v1.0.1',
+      'releaseNotes': [
+        'Improved update system',
+        'Improved journey tracking experience',
+        'Improved map experience',
+      ],
+    };
+
+    final info = UpdateInfo.fromJson(json);
+    expect(info.appName, 'Journiq');
+    expect(info.latestVersion, '1.0.1');
+    expect(info.minimumSupportedVersion, '1.0.0');
+    expect(info.downloadUrl, contains('Journiq-v1.0.1.apk'));
+    expect(info.releaseUrl, contains('tag/v1.0.1'));
+    expect(info.releaseNotes.length, 3);
+  });
+
+  test('falls back to downloadUrl or releaseUrl when updateUrl is omitted', () {
+    final json = {
+      'latestVersion': '1.0.2',
+      'minimumSupportedVersion': '1.0.0',
+      'downloadUrl': 'https://example.com/download.apk',
+      'releaseNotes': 'Single string note',
+    };
+
+    final info = UpdateInfo.fromJson(json);
+    expect(info.updateUrl, 'https://example.com/download.apk');
+    expect(info.releaseNotes, ['Single string note']);
+  });
 }

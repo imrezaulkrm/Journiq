@@ -13,12 +13,12 @@ class OfflineMapsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final offlineState = ref.watch(offlineMapControllerProvider);
     final mapMode = ref.watch(mapModeProvider);
     final controller = ref.read(offlineMapControllerProvider.notifier);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
       appBar: AppBar(title: const Text('Offline Maps')),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -40,7 +40,9 @@ class OfflineMapsScreen extends ConsumerWidget {
                     subtitle: Text(
                       'Prefers downloaded offline maps and falls back to online data.',
                       style: AppTypography.labelSmall.copyWith(
-                        color: AppColors.textSecondaryDark,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                     value: MapMode.automatic,
@@ -51,7 +53,9 @@ class OfflineMapsScreen extends ConsumerWidget {
                     subtitle: Text(
                       'Only renders cached and downloaded local district tiles.',
                       style: AppTypography.labelSmall.copyWith(
-                        color: AppColors.textSecondaryDark,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                     value: MapMode.offlineOnly,
@@ -62,7 +66,9 @@ class OfflineMapsScreen extends ConsumerWidget {
                     subtitle: Text(
                       'Always stream freshest online tiles from OpenStreetMap.',
                       style: AppTypography.labelSmall.copyWith(
-                        color: AppColors.textSecondaryDark,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                     value: MapMode.onlineOnly,

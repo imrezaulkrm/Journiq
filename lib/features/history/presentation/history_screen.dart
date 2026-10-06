@@ -18,10 +18,10 @@ class HistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final journeysAsync = ref.watch(allJourneysProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
       appBar: AppBar(title: const Text('Journey History')),
       body: journeysAsync.when(
         loading: () => const Center(
@@ -85,7 +85,9 @@ class HistoryScreen extends ConsumerWidget {
                   children: [
                     CircleAvatar(
                       radius: 24,
-                      backgroundColor: AppColors.darkSurfaceElevated,
+                      backgroundColor: isDark
+                          ? AppColors.darkSurfaceElevated
+                          : AppColors.lightSurfaceElevated,
                       child: Icon(
                         mode.icon,
                         color: AppColors.primaryNeon,
@@ -119,7 +121,9 @@ class HistoryScreen extends ConsumerWidget {
                           Text(
                             '${Formatters.formatDuration(j.activeDurationSeconds)} • Avg ${Formatters.formatSpeed(j.averageSpeedKmh)}',
                             style: AppTypography.labelSmall.copyWith(
-                              color: AppColors.textSecondaryDark,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -129,7 +133,9 @@ class HistoryScreen extends ConsumerWidget {
                               Text(
                                 Formatters.formatDateTime(j.startTime),
                                 style: AppTypography.labelSmall.copyWith(
-                                  color: AppColors.textMutedDark,
+                                  color: isDark
+                                      ? AppColors.textMutedDark
+                                      : AppColors.textMutedLight,
                                   fontSize: 10,
                                 ),
                               ),

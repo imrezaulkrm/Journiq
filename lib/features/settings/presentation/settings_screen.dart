@@ -10,6 +10,10 @@ import '../../offline_map/presentation/offline_maps_screen.dart';
 import '../../offline_map/providers/offline_map_provider.dart';
 import '../providers/settings_provider.dart';
 
+import '../../update/data/app_update_service.dart';
+import '../../update/domain/update_info.dart';
+import '../../update/presentation/update_dialog.dart';
+
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -19,11 +23,69 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   double _dbSizeMb = 0.0;
+  bool _isCheckingUpdate = false;
 
   @override
   void initState() {
     super.initState();
     _calcDbSize();
+  }
+
+  Future<void> _checkForUpdate() async {
+    setState(() => _isCheckingUpdate = true);
+    final service = AppUpdateService(
+      currentVersion: AppConstants.appVersion,
+      configurationUri: Uri.parse(AppConstants.defaultUpdateUrl),
+    );
+
+    try {
+      final info = await service.check(force: true);
+      if (!mounted) return;
+      setState(() => _isCheckingUpdate = false);
+
+      if (info == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not reach update server. Check internet connection.'),
+          ),
+        );
+        return;
+      }
+
+      final req = info.requirementFor(AppConstants.appVersion);
+      if (req != UpdateRequirement.none) {
+        UpdateDialog.show(
+          context,
+          info: info,
+          currentVersion: AppConstants.appVersion,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.statusGreen,
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, color: Colors.black, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Journiq is up to date (v${AppConstants.appVersion}).',
+                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isCheckingUpdate = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to check for updates.'),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _calcDbSize() async {
@@ -39,12 +101,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final settings = ref.watch(settingsProvider);
     final offlineState = ref.watch(offlineMapControllerProvider);
     final notifier = ref.read(settingsProvider.notifier);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -69,7 +131,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 DropdownButton<ThemeMode>(
                   value: settings.themeMode,
-                  dropdownColor: AppColors.darkSurfaceElevated,
+                  dropdownColor: isDark
+                      ? AppColors.darkSurfaceElevated
+                      : AppColors.lightSurfaceElevated,
                   underline: const SizedBox.shrink(),
                   items: const [
                     DropdownMenuItem(
@@ -242,6 +306,74 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const SizedBox(height: 20),
 
+          // App Updates Section
+          Text('App Version & Updates', style: AppTypography.titleMedium),
+          const SizedBox(height: 8),
+          FuturisticCard(
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.verified_outlined,
+                          color: AppColors.primaryNeon,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppConstants.appName,
+                              style: AppTypography.titleMedium,
+                            ),
+                            Text(
+                              'Installed: v${AppConstants.appVersion}',
+                              style: AppTypography.labelSmall.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: _isCheckingUpdate ? null : _checkForUpdate,
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      icon: _isCheckingUpdate
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(Icons.sync_rounded, size: 16),
+                      label: Text(
+                        _isCheckingUpdate ? 'Checking...' : 'Check Updates',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
           // Privacy Card (Section 61)
           Text('Privacy & Local First', style: AppTypography.titleMedium),
           const SizedBox(height: 8),
@@ -267,7 +399,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       Text(
                         'Journiq stores all your journeys, GPS points, routes, and statistics locally on your device in a secure SQLite database. No accounts, no cloud servers, and no tracking telemetry.',
                         style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.textSecondaryDark,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
@@ -276,14 +410,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           // About Card
           Center(
             child: Column(
               children: [
                 Text(
-                  '${AppConstants.appName} v1.0.0',
+                  '${AppConstants.appName} v${AppConstants.appVersion}',
                   style: AppTypography.titleMedium.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -292,13 +426,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Text(
                   AppConstants.appTagline,
                   style: AppTypography.labelSmall.copyWith(
-                    color: AppColors.textSecondaryDark,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
         ],
       ),
     );

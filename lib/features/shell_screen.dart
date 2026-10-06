@@ -41,12 +41,13 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         .checkActiveRecovery();
     if (active != null && mounted) {
       final mode = JourneyModeX.fromIndex(active.mode);
+      final isDark = Theme.of(context).brightness == Brightness.dark;
 
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
-          backgroundColor: AppColors.darkSurface,
+          backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
             side: const BorderSide(color: AppColors.primaryNeon, width: 1.5),
@@ -64,7 +65,11 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             children: [
               Text(
                 'An unfinished ${mode.label} journey was detected from a previous session.',
-                style: const TextStyle(color: AppColors.textSecondaryDark),
+                style: TextStyle(
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
               ),
               const SizedBox(height: 14),
               Text(
@@ -159,7 +164,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
       appBar: AppBar(
         title: Text(
           _currentIndex == 0
