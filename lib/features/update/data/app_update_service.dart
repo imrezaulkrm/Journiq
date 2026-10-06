@@ -73,34 +73,21 @@ class AppUpdateService {
   }
 
   static Future<bool> launchUpdateUrl(String url) async {
-    final uri = Uri.tryParse(url.trim());
-    if (uri == null) return false;
+  final uri = Uri.tryParse(url.trim());
 
-    try {
-      final launched = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
-      if (launched) return true;
-    } catch (_) {}
-
-    try {
-      final launched = await launchUrl(
-        uri,
-        mode: LaunchMode.platformDefault,
-      );
-      if (launched) return true;
-    } catch (_) {}
-
-    try {
-      return await launchUrl(
-        uri,
-        mode: LaunchMode.inAppBrowserView,
-      );
-    } catch (_) {
-      return false;
-    }
+  if (uri == null) {
+    return false;
   }
+
+  try {
+    return await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+  } catch (_) {
+    return false;
+  }
+}
 
   UpdateInfo? _readCached(SharedPreferences prefs) {
     final raw = prefs.getString('journiq_update_config');

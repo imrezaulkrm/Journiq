@@ -186,11 +186,14 @@ class _LiveJourneyScreenState extends ConsumerState<LiveJourneyScreen>
           // 2. Top Header Bar (HUD overlay)
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Back button (leaves tracking running in background)
+                  // Back button - top left
                   CircleAvatar(
                     backgroundColor: AppColors.darkSurfaceGlass,
                     child: IconButton(
@@ -201,29 +204,27 @@ class _LiveJourneyScreenState extends ConsumerState<LiveJourneyScreen>
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
-                  // Compact weather HUD stays in the top safe-area band.
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 260),
-                          child: FloatingWeatherCard(weather: _liveWeather),
-                        ),
-                      ),
+
+                  const Spacer(),
+
+                  // Weather - top right
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: 220,
+                    ),
+                    child: FloatingWeatherCard(
+                      weather: _liveWeather,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-
           // 3. Floating Follow Me Button (Visible only when follow paused)
           if (!_followingController.isFollowing && currentPt != null)
             Positioned(
               right: 16,
-              bottom: 220,
+              bottom: 400,
               child: FollowMeButton(
                 onPressed: () {
                   setState(() {

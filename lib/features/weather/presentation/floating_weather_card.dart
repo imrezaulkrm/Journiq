@@ -31,7 +31,7 @@ class _FloatingWeatherCardState extends State<FloatingWeatherCard> {
             const Icon(
               Icons.cloud_off_rounded,
               size: 16,
-              color: AppColors.statusOrange,
+              color: Color.fromARGB(255, 203, 54, 54),
             ),
             const SizedBox(width: 8),
             Text(
