@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../../core/constants/app_constants.dart';
+// import '../../../../core/services/app_version_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
@@ -34,12 +36,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   WeatherSnapshot? _homeWeather;
   TrackingPoint? _currentLocation;
   JourneyMode _selectedMode = JourneyMode.walking;
+  // String _appVersion = '';
 
   @override
   void initState() {
     super.initState();
     _loadInitialData();
   }
+
+  // Future<void> _loadAppVersion() async {
+  //   final version = await AppVersionService.version;
+
+  //   if (!mounted) return;
+
+  //   setState(() {
+  //     _appVersion = version;
+  //   });
+  // }
 
   Future<void> _loadInitialData() async {
     try {
@@ -83,8 +96,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final greeting = hour < 12
         ? 'Good morning'
         : hour < 17
-            ? 'Good afternoon'
-            : 'Good evening';
+        ? 'Good afternoon'
+        : 'Good evening';
 
     return Scaffold(
       body: SafeArea(
@@ -98,39 +111,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          AppConstants.appName,
-                          style: AppTypography.displayMetric.copyWith(
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -1.0,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryNeon.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: AppColors.primaryNeon.withValues(alpha: 0.4),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Text(
-                            'v${AppConstants.appVersion}',
-                            style: AppTypography.labelSmall.copyWith(
-                              color: AppColors.primaryNeon,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      AppConstants.appName,
+                      style: GoogleFonts.orbitron(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                      ),
                     ),
                     Text(
                       '$greeting • ${AppConstants.appTagline}',
@@ -154,7 +141,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         : AppColors.lightSurfaceElevated,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                      color: isDark
+                          ? AppColors.darkBorder
+                          : AppColors.lightBorder,
                     ),
                   ),
                   child: Text(
@@ -327,15 +316,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                 alpha: 0.16,
                                               )
                                             : (isDark
-                                                ? AppColors.darkSurfaceElevated
-                                                : AppColors.lightSurfaceElevated),
+                                                  ? AppColors
+                                                        .darkSurfaceElevated
+                                                  : AppColors
+                                                        .lightSurfaceElevated),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
                                           color: isSelected
                                               ? AppColors.primaryNeon
                                               : (isDark
-                                                  ? AppColors.darkBorder
-                                                  : AppColors.lightBorder),
+                                                    ? AppColors.darkBorder
+                                                    : AppColors.lightBorder),
                                           width: isSelected ? 1.2 : 0.8,
                                         ),
                                       ),
@@ -348,8 +339,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                             color: isSelected
                                                 ? AppColors.primaryNeon
                                                 : (isDark
-                                                    ? AppColors.textSecondaryDark
-                                                    : AppColors.textSecondaryLight),
+                                                      ? AppColors
+                                                            .textSecondaryDark
+                                                      : AppColors
+                                                            .textSecondaryLight),
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
@@ -362,8 +355,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                               color: isSelected
                                                   ? AppColors.primaryNeon
                                                   : (isDark
-                                                      ? AppColors.textSecondaryDark
-                                                      : AppColors.textSecondaryLight),
+                                                        ? AppColors
+                                                              .textSecondaryDark
+                                                        : AppColors
+                                                              .textSecondaryLight),
                                             ),
                                           ),
                                         ],
@@ -576,8 +571,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             color: highlight
                 ? AppColors.primaryNeon
                 : (isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight),
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight),
           ),
         ),
         const SizedBox(height: 2),

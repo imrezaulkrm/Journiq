@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'core/constants/app_constants.dart';
+import 'core/services/app_version_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/settings/providers/settings_provider.dart';
 import 'features/shell_screen.dart';
@@ -9,10 +11,13 @@ import 'features/update/data/app_update_service.dart';
 import 'features/update/domain/update_info.dart';
 import 'features/update/presentation/update_dialog.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set immersive navigation and status bar style
+  // Load installed app version from Android/iOS package metadata.
+  final appVersion = await AppVersionService.version;
+
+  // Set immersive navigation and status bar style.
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -22,11 +27,13 @@ void main() async {
     ),
   );
 
-  runApp(const ProviderScope(child: JourniqApp()));
+  runApp(ProviderScope(child: JourniqApp(appVersion: appVersion)));
 }
 
 class JourniqApp extends ConsumerWidget {
-  const JourniqApp({super.key});
+  final String appVersion;
+
+  const JourniqApp({super.key, required this.appVersion});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,24 +45,23 @@ class JourniqApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: settings.themeMode,
-      home: const UpdateGate(child: ShellScreen()),
+      home: UpdateGate(appVersion: appVersion, child: const ShellScreen()),
     );
   }
 }
 
 class UpdateGate extends StatefulWidget {
   final Widget child;
-  const UpdateGate({super.key, required this.child});
+  final String appVersion;
+
+  const UpdateGate({super.key, required this.child, required this.appVersion});
 
   @override
   State<UpdateGate> createState() => _UpdateGateState();
 }
 
 class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
-  static final _service = AppUpdateService(
-    currentVersion: AppConstants.appVersion,
-    configurationUri: Uri.parse(AppConstants.defaultUpdateUrl),
-  );
+  late final AppUpdateService _service;
 
   UpdateInfo? _info;
   bool _optionalShown = false;
@@ -64,6 +70,12 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+
+    _service = AppUpdateService(
+      currentVersion: widget.appVersion,
+      configurationUri: Uri.parse(AppConstants.defaultUpdateUrl),
+    );
+
     WidgetsBinding.instance.addObserver(this);
     _check();
   }
@@ -78,7 +90,8 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed &&
         (_lastCheck == null ||
-            DateTime.now().difference(_lastCheck!) > const Duration(hours: 6))) {
+            DateTime.now().difference(_lastCheck!) >
+                const Duration(hours: 6))) {
       _check();
     }
   }
@@ -88,6 +101,7 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
 
     try {
       final info = await _service.check(force: true);
+
       if (!mounted) return;
 
       setState(() {
@@ -95,17 +109,22 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
       });
 
       if (info != null) {
-        final requirement = info.requirementFor(AppConstants.appVersion);
+        final requirement = info.requirementFor(widget.appVersion);
+
         if (requirement == UpdateRequirement.optional && !_optionalShown) {
-          final isDismissed = await _service.isVersionDismissed(info.latestVersion);
+          final isDismissed = await _service.isVersionDismissed(
+            info.latestVersion,
+          );
+
           if (!isDismissed && mounted) {
             _optionalShown = true;
+
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
                 UpdateDialog.show(
                   context,
                   info: info,
-                  currentVersion: AppConstants.appVersion,
+                  currentVersion: widget.appVersion,
                   onSkipVersionChanged: (skip) {
                     if (skip) {
                       _service.dismissVersion(info.latestVersion);
@@ -120,15 +139,14 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
         }
       }
     } catch (_) {
-      // Fail silently without disrupting normal user flow
+      // Fail silently without disrupting normal user flow.
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final requirement =
-        _info?.requirementFor(AppConstants.appVersion) ??
-        UpdateRequirement.none;
+        _info?.requirementFor(widget.appVersion) ?? UpdateRequirement.none;
 
     if (requirement == UpdateRequirement.mandatory && _info != null) {
       return MandatoryUpdateView(info: _info!);

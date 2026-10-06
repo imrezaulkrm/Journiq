@@ -15,6 +15,7 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: UpdateGate(
+          appVersion: '1.0.3',
           child: Scaffold(
             body: Text('Journiq Shell Content'),
           ),

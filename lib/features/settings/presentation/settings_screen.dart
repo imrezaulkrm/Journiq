@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/services/app_version_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/futuristic_card.dart';
@@ -24,17 +25,29 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   double _dbSizeMb = 0.0;
   bool _isCheckingUpdate = false;
+  String _appVersion = '';
 
   @override
   void initState() {
     super.initState();
+    _loadAppVersion();
     _calcDbSize();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final version = await AppVersionService.version;
+
+    if (!mounted) return;
+
+    setState(() {
+      _appVersion = version;
+    });
   }
 
   Future<void> _checkForUpdate() async {
     setState(() => _isCheckingUpdate = true);
     final service = AppUpdateService(
-      currentVersion: AppConstants.appVersion,
+      currentVersion: _appVersion,
       configurationUri: Uri.parse(AppConstants.defaultUpdateUrl),
     );
 
@@ -46,30 +59,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (info == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not reach update server. Check internet connection.'),
+            content: Text(
+              'Could not reach update server. Check internet connection.',
+            ),
           ),
         );
         return;
       }
 
-      final req = info.requirementFor(AppConstants.appVersion);
+      final req = info.requirementFor(_appVersion);
       if (req != UpdateRequirement.none) {
-        UpdateDialog.show(
-          context,
-          info: info,
-          currentVersion: AppConstants.appVersion,
-        );
+        UpdateDialog.show(context, info: info, currentVersion: _appVersion);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.statusGreen,
             content: Row(
               children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.black, size: 20),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.black,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
-                  'Journiq is up to date (v${AppConstants.appVersion}).',
-                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+                  'Journiq is up to date (v$_appVersion).',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -80,9 +98,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) {
         setState(() => _isCheckingUpdate = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to check for updates.'),
-          ),
+          const SnackBar(content: Text('Failed to check for updates.')),
         );
       }
     }
@@ -330,14 +346,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               AppConstants.appName,
                               style: AppTypography.titleMedium,
                             ),
-                            Text(
-                              'Installed: v${AppConstants.appVersion}',
-                              style: AppTypography.labelSmall.copyWith(
-                                color: isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight,
-                              ),
-                            ),
                           ],
                         ),
                       ],
@@ -357,14 +365,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ? const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.sync_rounded, size: 16),
                       label: Text(
                         _isCheckingUpdate ? 'Checking...' : 'Check Updates',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -417,7 +426,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: Column(
               children: [
                 Text(
-                  '${AppConstants.appName} v${AppConstants.appVersion}',
+                  // '${AppConstants.appName} v$_appVersion',
+                  AppConstants.appName,
                   style: AppTypography.titleMedium.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
